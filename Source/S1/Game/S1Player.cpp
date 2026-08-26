@@ -79,28 +79,22 @@ void AS1Player::Tick(float DeltaSeconds)
 
 	if (IsMyPlayer() == false)
 	{
-		/*FVector Location = GetActorLocation();
+		FVector Location = GetActorLocation();
 		FVector DestLocation = FVector(DestInfo->x(), DestInfo->y(), DestInfo->z());
 
-		FVector MoveDir = (DestLocation - Location);
-		const float DistToDest = MoveDir.Length();
-		MoveDir.Normalize();
+		const float Distance = FVector::Dist(Location, DestLocation);
 
-		float MoveDist = (MoveDir * 600.f * DeltaSeconds).Length();
-		MoveDist = FMath::Min(DistToDest, MoveDist);
-		FVector NextLocation = Location + MoveDir * MoveDist;
-		
-		SetActorLocation(NextLocation);*/
+		// 오차가 큰 경우 강제 이동
+		if (Distance >= 150.f)
+		{
+			SetActorLocation(DestLocation);
+		}
 
 		const Protocol::MoveState State = PlayerInfo->state();
 		if (State == Protocol::MOVE_STATE_MOVE)
 		{
-			SetActorRotation(FRotator(0, DestInfo->yaw(), 0));
+			SetActorRotation(FMath::RInterpTo(GetActorRotation(), FRotator(0, DestInfo->yaw(), 0), DeltaSeconds, 15.f));
 			AddMovementInput(GetActorForwardVector());
-		}
-		else
-		{
-
 		}
 	}
 }

@@ -36,11 +36,13 @@ enum : uint16
 	PKT_S_PLAYER_RESPAWN = 1020,
 	PKT_C_MOVE = 1021,
 	PKT_S_MOVE = 1022,
-	PKT_S_PLAYER_DESPAWN = 1023,
-	PKT_S_MATCH_END = 1024,
-	PKT_S_RETURN_TO_ROOM = 1025,
-	PKT_C_CHAT = 1026,
-	PKT_S_CHAT = 1027,
+	PKT_C_FIRE = 1023,
+	PKT_S_FIRE = 1024,
+	PKT_S_PLAYER_DESPAWN = 1025,
+	PKT_S_MATCH_END = 1026,
+	PKT_S_RETURN_TO_ROOM = 1027,
+	PKT_C_CHAT = 1028,
+	PKT_S_CHAT = 1029,
 };
 
 
@@ -58,6 +60,7 @@ bool Handle_S_MATCH_STATE(PacketSessionRef& session, Protocol::S_MATCH_STATE& pk
 bool Handle_S_PLAYER_STATE(PacketSessionRef& session, Protocol::S_PLAYER_STATE& pkt);
 bool Handle_S_PLAYER_RESPAWN(PacketSessionRef& session, Protocol::S_PLAYER_RESPAWN& pkt);
 bool Handle_S_MOVE(PacketSessionRef& session, Protocol::S_MOVE& pkt);
+bool Handle_S_FIRE(PacketSessionRef& session, Protocol::S_FIRE& pkt);
 bool Handle_S_PLAYER_DESPAWN(PacketSessionRef& session, Protocol::S_PLAYER_DESPAWN& pkt);
 bool Handle_S_MATCH_END(PacketSessionRef& session, Protocol::S_MATCH_END& pkt);
 bool Handle_S_RETURN_TO_ROOM(PacketSessionRef& session, Protocol::S_RETURN_TO_ROOM& pkt);
@@ -83,6 +86,7 @@ public:
 		GPacketHandler[PKT_S_PLAYER_STATE] = [](PacketSessionRef& session, BYTE* buffer, int32 len) {	return HandlePacket<Protocol::S_PLAYER_STATE>(Handle_S_PLAYER_STATE, session, buffer, len);	};
 		GPacketHandler[PKT_S_PLAYER_RESPAWN] = [](PacketSessionRef& session, BYTE* buffer, int32 len) {	return HandlePacket<Protocol::S_PLAYER_RESPAWN>(Handle_S_PLAYER_RESPAWN, session, buffer, len);	};
 		GPacketHandler[PKT_S_MOVE] = [](PacketSessionRef& session, BYTE* buffer, int32 len) {	return HandlePacket<Protocol::S_MOVE>(Handle_S_MOVE, session, buffer, len);	};
+		GPacketHandler[PKT_S_FIRE] = [](PacketSessionRef& session, BYTE* buffer, int32 len) {	return HandlePacket<Protocol::S_FIRE>(Handle_S_FIRE, session, buffer, len);	};
 		GPacketHandler[PKT_S_PLAYER_DESPAWN] = [](PacketSessionRef& session, BYTE* buffer, int32 len) {	return HandlePacket<Protocol::S_PLAYER_DESPAWN>(Handle_S_PLAYER_DESPAWN, session, buffer, len);	};
 		GPacketHandler[PKT_S_MATCH_END] = [](PacketSessionRef& session, BYTE* buffer, int32 len) {	return HandlePacket<Protocol::S_MATCH_END>(Handle_S_MATCH_END, session, buffer, len);	};
 		GPacketHandler[PKT_S_RETURN_TO_ROOM] = [](PacketSessionRef& session, BYTE* buffer, int32 len) {	return HandlePacket<Protocol::S_RETURN_TO_ROOM>(Handle_S_RETURN_TO_ROOM, session, buffer, len);	};
@@ -105,6 +109,7 @@ public:
 	static SendBufferRef MakeSendBuffer(Protocol::C_START_MATCH& pkt) { return MakeSendBuffer(pkt, PKT_C_START_MATCH); }
 	static SendBufferRef MakeSendBuffer(Protocol::C_MATCH_PREPARE& pkt) { return MakeSendBuffer(pkt, PKT_C_MATCH_PREPARE); }
 	static SendBufferRef MakeSendBuffer(Protocol::C_MOVE& pkt) { return MakeSendBuffer(pkt, PKT_C_MOVE); }
+	static SendBufferRef MakeSendBuffer(Protocol::C_FIRE& pkt) { return MakeSendBuffer(pkt, PKT_C_FIRE); }
 	static SendBufferRef MakeSendBuffer(Protocol::C_CHAT& pkt) { return MakeSendBuffer(pkt, PKT_C_CHAT); }
 
 private:

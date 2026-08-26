@@ -37,9 +37,10 @@ AS1MyPlayer::AS1MyPlayer()
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
-	CameraBoom->TargetArmLength = 400.0f; // The camera follows at this distance behind the character	
+	CameraBoom->SetUsingAbsoluteRotation(true);
+	CameraBoom->TargetArmLength = 800.0f; // The camera follows at this distance behind the character	
 	CameraBoom->bUsePawnControlRotation = false; // Rotate the arm based on the controller
-	CameraBoom->SetRelativeRotation(FRotator(-45.f, -45.f, 0.f));
+	CameraBoom->SetWorldRotation(FRotator(0.f, -60.f, 0.f));
 
 	// Create a follow camera
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
@@ -57,14 +58,37 @@ void AS1MyPlayer::NotifyControllerChanged()
 {
 	Super::NotifyControllerChanged();
 
-	// Add Input Mapping Context
-	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
+	//// Add Input Mapping Context
+	//if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
+	//{
+	//	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+	//	{
+	//		Subsystem->AddMappingContext(DefaultMappingContext, 0);
+	//	}
+	//}
+
+	APlayerController* PC = Cast<APlayerController>(Controller);
+	if (PC == nullptr)
 	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
-		{
-			Subsystem->AddMappingContext(DefaultMappingContext, 0);
-		}
+		UE_LOG(LogTemp, Error, TEXT("MyPlayer has no PlayerController"));
+		return;
 	}
+
+	PC->SetInputMode(FInputModeGameOnly());
+	PC->SetShowMouseCursor(true);
+
+	UEnhancedInputLocalPlayerSubsystem* Subsystem =
+		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(
+			PC->GetLocalPlayer());
+
+	if (Subsystem == nullptr || DefaultMappingContext == nullptr)
+	{
+		return;
+	}
+
+	Subsystem->AddMappingContext(DefaultMappingContext, 0);
+
+	UE_LOG(LogTemp, Warning, TEXT("Input mapping context added"));
 }
 
 void AS1MyPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)

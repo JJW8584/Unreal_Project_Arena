@@ -197,6 +197,9 @@ public:
 
 	void HandleMove(const Protocol::S_MOVE& MovePkt);
 
+	UFUNCTION(BlueprintCallable)
+	void Fire();
+
 public:
 	// GameServer
 	class FSocket* Socket = nullptr;

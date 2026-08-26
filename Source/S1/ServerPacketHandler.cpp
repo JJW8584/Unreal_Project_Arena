@@ -181,6 +181,11 @@ bool Handle_S_MOVE(PacketSessionRef& session, Protocol::S_MOVE& pkt)
 	return true;
 }
 
+bool Handle_S_FIRE(PacketSessionRef& session, Protocol::S_FIRE& pkt)
+{
+	return true;
+}
+
 bool Handle_S_PLAYER_DESPAWN(PacketSessionRef& session, Protocol::S_PLAYER_DESPAWN& pkt)
 {
 	return true;

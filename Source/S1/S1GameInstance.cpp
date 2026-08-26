@@ -346,6 +346,7 @@ void US1GameInstance::HandleSpawn(const Protocol::PlayerInfo& PlayerInfo)
 			return;
 
 		Player->SetMoveInfo(PlayerInfo.move_info());
+		Player->SetDestInfo(PlayerInfo.move_info());
 
 		MyPlayer = Player;
 		Players.Add(PlayerInfo.object_id(), Player);
@@ -358,6 +359,7 @@ void US1GameInstance::HandleSpawn(const Protocol::PlayerInfo& PlayerInfo)
 			return;
 
 		Player->SetMoveInfo(PlayerInfo.move_info());
+		Player->SetDestInfo(PlayerInfo.move_info());
 		Players.Add(PlayerInfo.object_id(), Player);
 	}
 }
@@ -380,23 +382,34 @@ void US1GameInstance::HandleDespawn(uint64 ObjectId)
 
 void US1GameInstance::HandleMove(const Protocol::S_MOVE& MovePkt)
 {
-	//if (Socket == nullptr || GameServerSession == nullptr)
-	//	return;
+	if (Socket == nullptr || GameServerSession == nullptr)
+		return;
 
-	//auto* World = GetWorld();
-	//if (World == nullptr)
-	//	return;
+	auto* World = GetWorld();
+	if (World == nullptr)
+		return;
 
-	//const uint64 ObjectId = MovePkt.info().object_id();
-	//AS1Player** FindActor = Players.Find(ObjectId);
-	//if (FindActor == nullptr)
-	//	return;
+	const uint64 ObjectId = MovePkt.player_info().object_id();
+	AS1Player** FindActor = Players.Find(ObjectId);
+	if (FindActor == nullptr)
+		return;
 
-	//AS1Player* Player = (*FindActor);
-	//if (Player->IsMyPlayer())
-	//	return;
+	AS1Player* Player = (*FindActor);
+	if (Player->IsMyPlayer())
+		return;
 
-	//const Protocol::PlayerInfo& Info = MovePkt.info();
-	////Player->SetPlayerInfo(Info);
-	//Player->SetDestInfo(Info);
+	const Protocol::MoveInfo& Info = MovePkt.player_info().move_info();
+	//Player->SetPlayerInfo(Info);
+	Player->SetDestInfo(Info);
+}
+
+void US1GameInstance::Fire()
+{
+	if (Socket == nullptr || !GameServerSession.IsValid())
+		return;
+
+	Protocol::C_FIRE Pkt;
+	Pkt.set_client_fire_id(LocalObjectId);
+
+	SEND_PACKET(Pkt);
 }

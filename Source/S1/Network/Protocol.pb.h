@@ -63,6 +63,9 @@ extern C_CREATE_ROOMDefaultTypeInternal _C_CREATE_ROOM_default_instance_;
 class C_ENTER_ROOM;
 struct C_ENTER_ROOMDefaultTypeInternal;
 extern C_ENTER_ROOMDefaultTypeInternal _C_ENTER_ROOM_default_instance_;
+class C_FIRE;
+struct C_FIREDefaultTypeInternal;
+extern C_FIREDefaultTypeInternal _C_FIRE_default_instance_;
 class C_LEAVE_ROOM;
 struct C_LEAVE_ROOMDefaultTypeInternal;
 extern C_LEAVE_ROOMDefaultTypeInternal _C_LEAVE_ROOM_default_instance_;
@@ -93,6 +96,9 @@ extern S_CREATE_ROOMDefaultTypeInternal _S_CREATE_ROOM_default_instance_;
 class S_ENTER_ROOM;
 struct S_ENTER_ROOMDefaultTypeInternal;
 extern S_ENTER_ROOMDefaultTypeInternal _S_ENTER_ROOM_default_instance_;
+class S_FIRE;
+struct S_FIREDefaultTypeInternal;
+extern S_FIREDefaultTypeInternal _S_FIRE_default_instance_;
 class S_LEAVE_ROOM;
 struct S_LEAVE_ROOMDefaultTypeInternal;
 extern S_LEAVE_ROOMDefaultTypeInternal _S_LEAVE_ROOM_default_instance_;
@@ -139,6 +145,7 @@ template<> ::Protocol::C_CHANGE_TEAM* Arena::CreateMaybeMessage<::Protocol::C_CH
 template<> ::Protocol::C_CHAT* Arena::CreateMaybeMessage<::Protocol::C_CHAT>(Arena*);
 template<> ::Protocol::C_CREATE_ROOM* Arena::CreateMaybeMessage<::Protocol::C_CREATE_ROOM>(Arena*);
 template<> ::Protocol::C_ENTER_ROOM* Arena::CreateMaybeMessage<::Protocol::C_ENTER_ROOM>(Arena*);
+template<> ::Protocol::C_FIRE* Arena::CreateMaybeMessage<::Protocol::C_FIRE>(Arena*);
 template<> ::Protocol::C_LEAVE_ROOM* Arena::CreateMaybeMessage<::Protocol::C_LEAVE_ROOM>(Arena*);
 template<> ::Protocol::C_LOGIN* Arena::CreateMaybeMessage<::Protocol::C_LOGIN>(Arena*);
 template<> ::Protocol::C_MATCH_PREPARE* Arena::CreateMaybeMessage<::Protocol::C_MATCH_PREPARE>(Arena*);
@@ -149,6 +156,7 @@ template<> ::Protocol::C_START_MATCH* Arena::CreateMaybeMessage<::Protocol::C_ST
 template<> ::Protocol::S_CHAT* Arena::CreateMaybeMessage<::Protocol::S_CHAT>(Arena*);
 template<> ::Protocol::S_CREATE_ROOM* Arena::CreateMaybeMessage<::Protocol::S_CREATE_ROOM>(Arena*);
 template<> ::Protocol::S_ENTER_ROOM* Arena::CreateMaybeMessage<::Protocol::S_ENTER_ROOM>(Arena*);
+template<> ::Protocol::S_FIRE* Arena::CreateMaybeMessage<::Protocol::S_FIRE>(Arena*);
 template<> ::Protocol::S_LEAVE_ROOM* Arena::CreateMaybeMessage<::Protocol::S_LEAVE_ROOM>(Arena*);
 template<> ::Protocol::S_LOGIN* Arena::CreateMaybeMessage<::Protocol::S_LOGIN>(Arena*);
 template<> ::Protocol::S_MATCH_END* Arena::CreateMaybeMessage<::Protocol::S_MATCH_END>(Arena*);
@@ -3600,6 +3608,434 @@ class S_MOVE final :
 };
 // -------------------------------------------------------------------
 
+class C_FIRE final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:Protocol.C_FIRE) */ {
+ public:
+  inline C_FIRE() : C_FIRE(nullptr) {}
+  ~C_FIRE() override;
+  explicit PROTOBUF_CONSTEXPR C_FIRE(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  C_FIRE(const C_FIRE& from);
+  C_FIRE(C_FIRE&& from) noexcept
+    : C_FIRE() {
+    *this = ::std::move(from);
+  }
+
+  inline C_FIRE& operator=(const C_FIRE& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline C_FIRE& operator=(C_FIRE&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const C_FIRE& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const C_FIRE* internal_default_instance() {
+    return reinterpret_cast<const C_FIRE*>(
+               &_C_FIRE_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    23;
+
+  friend void swap(C_FIRE& a, C_FIRE& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(C_FIRE* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(C_FIRE* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  C_FIRE* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<C_FIRE>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const C_FIRE& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom( const C_FIRE& from) {
+    C_FIRE::MergeImpl(*this, from);
+  }
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::PROTOBUF_NAMESPACE_ID::Arena* arena, bool is_message_owned);
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(C_FIRE* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "Protocol.C_FIRE";
+  }
+  protected:
+  explicit C_FIRE(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kClientFireIdFieldNumber = 1,
+    kSpawnXFieldNumber = 2,
+    kSpawnYFieldNumber = 3,
+    kSpawnZFieldNumber = 4,
+    kDirectionXFieldNumber = 5,
+    kDirectionYFieldNumber = 6,
+    kDirectionZFieldNumber = 7,
+  };
+  // uint32 client_fire_id = 1;
+  void clear_client_fire_id();
+  uint32_t client_fire_id() const;
+  void set_client_fire_id(uint32_t value);
+  private:
+  uint32_t _internal_client_fire_id() const;
+  void _internal_set_client_fire_id(uint32_t value);
+  public:
+
+  // float spawn_x = 2;
+  void clear_spawn_x();
+  float spawn_x() const;
+  void set_spawn_x(float value);
+  private:
+  float _internal_spawn_x() const;
+  void _internal_set_spawn_x(float value);
+  public:
+
+  // float spawn_y = 3;
+  void clear_spawn_y();
+  float spawn_y() const;
+  void set_spawn_y(float value);
+  private:
+  float _internal_spawn_y() const;
+  void _internal_set_spawn_y(float value);
+  public:
+
+  // float spawn_z = 4;
+  void clear_spawn_z();
+  float spawn_z() const;
+  void set_spawn_z(float value);
+  private:
+  float _internal_spawn_z() const;
+  void _internal_set_spawn_z(float value);
+  public:
+
+  // float direction_x = 5;
+  void clear_direction_x();
+  float direction_x() const;
+  void set_direction_x(float value);
+  private:
+  float _internal_direction_x() const;
+  void _internal_set_direction_x(float value);
+  public:
+
+  // float direction_y = 6;
+  void clear_direction_y();
+  float direction_y() const;
+  void set_direction_y(float value);
+  private:
+  float _internal_direction_y() const;
+  void _internal_set_direction_y(float value);
+  public:
+
+  // float direction_z = 7;
+  void clear_direction_z();
+  float direction_z() const;
+  void set_direction_z(float value);
+  private:
+  float _internal_direction_z() const;
+  void _internal_set_direction_z(float value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:Protocol.C_FIRE)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  struct Impl_ {
+    uint32_t client_fire_id_;
+    float spawn_x_;
+    float spawn_y_;
+    float spawn_z_;
+    float direction_x_;
+    float direction_y_;
+    float direction_z_;
+    mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_Protocol_2eproto;
+};
+// -------------------------------------------------------------------
+
+class S_FIRE final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:Protocol.S_FIRE) */ {
+ public:
+  inline S_FIRE() : S_FIRE(nullptr) {}
+  ~S_FIRE() override;
+  explicit PROTOBUF_CONSTEXPR S_FIRE(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  S_FIRE(const S_FIRE& from);
+  S_FIRE(S_FIRE&& from) noexcept
+    : S_FIRE() {
+    *this = ::std::move(from);
+  }
+
+  inline S_FIRE& operator=(const S_FIRE& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline S_FIRE& operator=(S_FIRE&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const S_FIRE& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const S_FIRE* internal_default_instance() {
+    return reinterpret_cast<const S_FIRE*>(
+               &_S_FIRE_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    24;
+
+  friend void swap(S_FIRE& a, S_FIRE& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(S_FIRE* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(S_FIRE* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  S_FIRE* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<S_FIRE>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const S_FIRE& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom( const S_FIRE& from) {
+    S_FIRE::MergeImpl(*this, from);
+  }
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::PROTOBUF_NAMESPACE_ID::Arena* arena, bool is_message_owned);
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(S_FIRE* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "Protocol.S_FIRE";
+  }
+  protected:
+  explicit S_FIRE(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kClientFireIdFieldNumber = 1,
+    kSpawnXFieldNumber = 2,
+    kSpawnYFieldNumber = 3,
+    kSpawnZFieldNumber = 4,
+    kDirectionXFieldNumber = 5,
+    kDirectionYFieldNumber = 6,
+    kDirectionZFieldNumber = 7,
+  };
+  // uint32 client_fire_id = 1;
+  void clear_client_fire_id();
+  uint32_t client_fire_id() const;
+  void set_client_fire_id(uint32_t value);
+  private:
+  uint32_t _internal_client_fire_id() const;
+  void _internal_set_client_fire_id(uint32_t value);
+  public:
+
+  // float spawn_x = 2;
+  void clear_spawn_x();
+  float spawn_x() const;
+  void set_spawn_x(float value);
+  private:
+  float _internal_spawn_x() const;
+  void _internal_set_spawn_x(float value);
+  public:
+
+  // float spawn_y = 3;
+  void clear_spawn_y();
+  float spawn_y() const;
+  void set_spawn_y(float value);
+  private:
+  float _internal_spawn_y() const;
+  void _internal_set_spawn_y(float value);
+  public:
+
+  // float spawn_z = 4;
+  void clear_spawn_z();
+  float spawn_z() const;
+  void set_spawn_z(float value);
+  private:
+  float _internal_spawn_z() const;
+  void _internal_set_spawn_z(float value);
+  public:
+
+  // float direction_x = 5;
+  void clear_direction_x();
+  float direction_x() const;
+  void set_direction_x(float value);
+  private:
+  float _internal_direction_x() const;
+  void _internal_set_direction_x(float value);
+  public:
+
+  // float direction_y = 6;
+  void clear_direction_y();
+  float direction_y() const;
+  void set_direction_y(float value);
+  private:
+  float _internal_direction_y() const;
+  void _internal_set_direction_y(float value);
+  public:
+
+  // float direction_z = 7;
+  void clear_direction_z();
+  float direction_z() const;
+  void set_direction_z(float value);
+  private:
+  float _internal_direction_z() const;
+  void _internal_set_direction_z(float value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:Protocol.S_FIRE)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  struct Impl_ {
+    uint32_t client_fire_id_;
+    float spawn_x_;
+    float spawn_y_;
+    float spawn_z_;
+    float direction_x_;
+    float direction_y_;
+    float direction_z_;
+    mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_Protocol_2eproto;
+};
+// -------------------------------------------------------------------
+
 class S_PLAYER_DESPAWN final :
     public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:Protocol.S_PLAYER_DESPAWN) */ {
  public:
@@ -3648,7 +4084,7 @@ class S_PLAYER_DESPAWN final :
                &_S_PLAYER_DESPAWN_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    23;
+    25;
 
   friend void swap(S_PLAYER_DESPAWN& a, S_PLAYER_DESPAWN& b) {
     a.Swap(&b);
@@ -3796,7 +4232,7 @@ class S_MATCH_END final :
                &_S_MATCH_END_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    24;
+    26;
 
   friend void swap(S_MATCH_END& a, S_MATCH_END& b) {
     a.Swap(&b);
@@ -3953,7 +4389,7 @@ class S_RETURN_TO_ROOM final :
                &_S_RETURN_TO_ROOM_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    25;
+    27;
 
   friend void swap(S_RETURN_TO_ROOM& a, S_RETURN_TO_ROOM& b) {
     a.Swap(&b);
@@ -4110,7 +4546,7 @@ class C_CHAT final :
                &_C_CHAT_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    26;
+    28;
 
   friend void swap(C_CHAT& a, C_CHAT& b) {
     a.Swap(&b);
@@ -4263,7 +4699,7 @@ class S_CHAT final :
                &_S_CHAT_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    27;
+    29;
 
   friend void swap(S_CHAT& a, S_CHAT& b) {
     a.Swap(&b);
@@ -5720,6 +6156,294 @@ inline void S_MOVE::set_allocated_player_info(::Protocol::PlayerInfo* player_inf
 
 // -------------------------------------------------------------------
 
+// C_FIRE
+
+// uint32 client_fire_id = 1;
+inline void C_FIRE::clear_client_fire_id() {
+  _impl_.client_fire_id_ = 0u;
+}
+inline uint32_t C_FIRE::_internal_client_fire_id() const {
+  return _impl_.client_fire_id_;
+}
+inline uint32_t C_FIRE::client_fire_id() const {
+  // @@protoc_insertion_point(field_get:Protocol.C_FIRE.client_fire_id)
+  return _internal_client_fire_id();
+}
+inline void C_FIRE::_internal_set_client_fire_id(uint32_t value) {
+  
+  _impl_.client_fire_id_ = value;
+}
+inline void C_FIRE::set_client_fire_id(uint32_t value) {
+  _internal_set_client_fire_id(value);
+  // @@protoc_insertion_point(field_set:Protocol.C_FIRE.client_fire_id)
+}
+
+// float spawn_x = 2;
+inline void C_FIRE::clear_spawn_x() {
+  _impl_.spawn_x_ = 0;
+}
+inline float C_FIRE::_internal_spawn_x() const {
+  return _impl_.spawn_x_;
+}
+inline float C_FIRE::spawn_x() const {
+  // @@protoc_insertion_point(field_get:Protocol.C_FIRE.spawn_x)
+  return _internal_spawn_x();
+}
+inline void C_FIRE::_internal_set_spawn_x(float value) {
+  
+  _impl_.spawn_x_ = value;
+}
+inline void C_FIRE::set_spawn_x(float value) {
+  _internal_set_spawn_x(value);
+  // @@protoc_insertion_point(field_set:Protocol.C_FIRE.spawn_x)
+}
+
+// float spawn_y = 3;
+inline void C_FIRE::clear_spawn_y() {
+  _impl_.spawn_y_ = 0;
+}
+inline float C_FIRE::_internal_spawn_y() const {
+  return _impl_.spawn_y_;
+}
+inline float C_FIRE::spawn_y() const {
+  // @@protoc_insertion_point(field_get:Protocol.C_FIRE.spawn_y)
+  return _internal_spawn_y();
+}
+inline void C_FIRE::_internal_set_spawn_y(float value) {
+  
+  _impl_.spawn_y_ = value;
+}
+inline void C_FIRE::set_spawn_y(float value) {
+  _internal_set_spawn_y(value);
+  // @@protoc_insertion_point(field_set:Protocol.C_FIRE.spawn_y)
+}
+
+// float spawn_z = 4;
+inline void C_FIRE::clear_spawn_z() {
+  _impl_.spawn_z_ = 0;
+}
+inline float C_FIRE::_internal_spawn_z() const {
+  return _impl_.spawn_z_;
+}
+inline float C_FIRE::spawn_z() const {
+  // @@protoc_insertion_point(field_get:Protocol.C_FIRE.spawn_z)
+  return _internal_spawn_z();
+}
+inline void C_FIRE::_internal_set_spawn_z(float value) {
+  
+  _impl_.spawn_z_ = value;
+}
+inline void C_FIRE::set_spawn_z(float value) {
+  _internal_set_spawn_z(value);
+  // @@protoc_insertion_point(field_set:Protocol.C_FIRE.spawn_z)
+}
+
+// float direction_x = 5;
+inline void C_FIRE::clear_direction_x() {
+  _impl_.direction_x_ = 0;
+}
+inline float C_FIRE::_internal_direction_x() const {
+  return _impl_.direction_x_;
+}
+inline float C_FIRE::direction_x() const {
+  // @@protoc_insertion_point(field_get:Protocol.C_FIRE.direction_x)
+  return _internal_direction_x();
+}
+inline void C_FIRE::_internal_set_direction_x(float value) {
+  
+  _impl_.direction_x_ = value;
+}
+inline void C_FIRE::set_direction_x(float value) {
+  _internal_set_direction_x(value);
+  // @@protoc_insertion_point(field_set:Protocol.C_FIRE.direction_x)
+}
+
+// float direction_y = 6;
+inline void C_FIRE::clear_direction_y() {
+  _impl_.direction_y_ = 0;
+}
+inline float C_FIRE::_internal_direction_y() const {
+  return _impl_.direction_y_;
+}
+inline float C_FIRE::direction_y() const {
+  // @@protoc_insertion_point(field_get:Protocol.C_FIRE.direction_y)
+  return _internal_direction_y();
+}
+inline void C_FIRE::_internal_set_direction_y(float value) {
+  
+  _impl_.direction_y_ = value;
+}
+inline void C_FIRE::set_direction_y(float value) {
+  _internal_set_direction_y(value);
+  // @@protoc_insertion_point(field_set:Protocol.C_FIRE.direction_y)
+}
+
+// float direction_z = 7;
+inline void C_FIRE::clear_direction_z() {
+  _impl_.direction_z_ = 0;
+}
+inline float C_FIRE::_internal_direction_z() const {
+  return _impl_.direction_z_;
+}
+inline float C_FIRE::direction_z() const {
+  // @@protoc_insertion_point(field_get:Protocol.C_FIRE.direction_z)
+  return _internal_direction_z();
+}
+inline void C_FIRE::_internal_set_direction_z(float value) {
+  
+  _impl_.direction_z_ = value;
+}
+inline void C_FIRE::set_direction_z(float value) {
+  _internal_set_direction_z(value);
+  // @@protoc_insertion_point(field_set:Protocol.C_FIRE.direction_z)
+}
+
+// -------------------------------------------------------------------
+
+// S_FIRE
+
+// uint32 client_fire_id = 1;
+inline void S_FIRE::clear_client_fire_id() {
+  _impl_.client_fire_id_ = 0u;
+}
+inline uint32_t S_FIRE::_internal_client_fire_id() const {
+  return _impl_.client_fire_id_;
+}
+inline uint32_t S_FIRE::client_fire_id() const {
+  // @@protoc_insertion_point(field_get:Protocol.S_FIRE.client_fire_id)
+  return _internal_client_fire_id();
+}
+inline void S_FIRE::_internal_set_client_fire_id(uint32_t value) {
+  
+  _impl_.client_fire_id_ = value;
+}
+inline void S_FIRE::set_client_fire_id(uint32_t value) {
+  _internal_set_client_fire_id(value);
+  // @@protoc_insertion_point(field_set:Protocol.S_FIRE.client_fire_id)
+}
+
+// float spawn_x = 2;
+inline void S_FIRE::clear_spawn_x() {
+  _impl_.spawn_x_ = 0;
+}
+inline float S_FIRE::_internal_spawn_x() const {
+  return _impl_.spawn_x_;
+}
+inline float S_FIRE::spawn_x() const {
+  // @@protoc_insertion_point(field_get:Protocol.S_FIRE.spawn_x)
+  return _internal_spawn_x();
+}
+inline void S_FIRE::_internal_set_spawn_x(float value) {
+  
+  _impl_.spawn_x_ = value;
+}
+inline void S_FIRE::set_spawn_x(float value) {
+  _internal_set_spawn_x(value);
+  // @@protoc_insertion_point(field_set:Protocol.S_FIRE.spawn_x)
+}
+
+// float spawn_y = 3;
+inline void S_FIRE::clear_spawn_y() {
+  _impl_.spawn_y_ = 0;
+}
+inline float S_FIRE::_internal_spawn_y() const {
+  return _impl_.spawn_y_;
+}
+inline float S_FIRE::spawn_y() const {
+  // @@protoc_insertion_point(field_get:Protocol.S_FIRE.spawn_y)
+  return _internal_spawn_y();
+}
+inline void S_FIRE::_internal_set_spawn_y(float value) {
+  
+  _impl_.spawn_y_ = value;
+}
+inline void S_FIRE::set_spawn_y(float value) {
+  _internal_set_spawn_y(value);
+  // @@protoc_insertion_point(field_set:Protocol.S_FIRE.spawn_y)
+}
+
+// float spawn_z = 4;
+inline void S_FIRE::clear_spawn_z() {
+  _impl_.spawn_z_ = 0;
+}
+inline float S_FIRE::_internal_spawn_z() const {
+  return _impl_.spawn_z_;
+}
+inline float S_FIRE::spawn_z() const {
+  // @@protoc_insertion_point(field_get:Protocol.S_FIRE.spawn_z)
+  return _internal_spawn_z();
+}
+inline void S_FIRE::_internal_set_spawn_z(float value) {
+  
+  _impl_.spawn_z_ = value;
+}
+inline void S_FIRE::set_spawn_z(float value) {
+  _internal_set_spawn_z(value);
+  // @@protoc_insertion_point(field_set:Protocol.S_FIRE.spawn_z)
+}
+
+// float direction_x = 5;
+inline void S_FIRE::clear_direction_x() {
+  _impl_.direction_x_ = 0;
+}
+inline float S_FIRE::_internal_direction_x() const {
+  return _impl_.direction_x_;
+}
+inline float S_FIRE::direction_x() const {
+  // @@protoc_insertion_point(field_get:Protocol.S_FIRE.direction_x)
+  return _internal_direction_x();
+}
+inline void S_FIRE::_internal_set_direction_x(float value) {
+  
+  _impl_.direction_x_ = value;
+}
+inline void S_FIRE::set_direction_x(float value) {
+  _internal_set_direction_x(value);
+  // @@protoc_insertion_point(field_set:Protocol.S_FIRE.direction_x)
+}
+
+// float direction_y = 6;
+inline void S_FIRE::clear_direction_y() {
+  _impl_.direction_y_ = 0;
+}
+inline float S_FIRE::_internal_direction_y() const {
+  return _impl_.direction_y_;
+}
+inline float S_FIRE::direction_y() const {
+  // @@protoc_insertion_point(field_get:Protocol.S_FIRE.direction_y)
+  return _internal_direction_y();
+}
+inline void S_FIRE::_internal_set_direction_y(float value) {
+  
+  _impl_.direction_y_ = value;
+}
+inline void S_FIRE::set_direction_y(float value) {
+  _internal_set_direction_y(value);
+  // @@protoc_insertion_point(field_set:Protocol.S_FIRE.direction_y)
+}
+
+// float direction_z = 7;
+inline void S_FIRE::clear_direction_z() {
+  _impl_.direction_z_ = 0;
+}
+inline float S_FIRE::_internal_direction_z() const {
+  return _impl_.direction_z_;
+}
+inline float S_FIRE::direction_z() const {
+  // @@protoc_insertion_point(field_get:Protocol.S_FIRE.direction_z)
+  return _internal_direction_z();
+}
+inline void S_FIRE::_internal_set_direction_z(float value) {
+  
+  _impl_.direction_z_ = value;
+}
+inline void S_FIRE::set_direction_z(float value) {
+  _internal_set_direction_z(value);
+  // @@protoc_insertion_point(field_set:Protocol.S_FIRE.direction_z)
+}
+
+// -------------------------------------------------------------------
+
 // S_PLAYER_DESPAWN
 
 // uint64 object_id = 1;
@@ -6051,6 +6775,10 @@ inline void S_CHAT::set_allocated_msg(std::string* msg) {
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------
