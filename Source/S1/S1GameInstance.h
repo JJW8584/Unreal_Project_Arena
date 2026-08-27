@@ -182,12 +182,19 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Room")
 	FOnLeaveRoomResult OnLeaveRoomResult;
 
+	//----------
+	//	인게임
+	//----------
+
 	// 게임 시작
 	UFUNCTION(BlueprintCallable)
 	bool RequestGameStart();
 
 	UFUNCTION(BlueprintCallable)
 	void PrepareMatch();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Bullet")
+	TSubclassOf<AActor> BulletClass;
 
 public:
 	void HandlePrepareMatch(const Protocol::S_MATCH_PREPARE& Pkt);
@@ -196,9 +203,10 @@ public:
 	void HandleDespawn(uint64 ObjectId);
 
 	void HandleMove(const Protocol::S_MOVE& MovePkt);
+	void HandleFire(const Protocol::S_FIRE& FirePkt);
 
-	UFUNCTION(BlueprintCallable)
-	void Fire();
+	UFUNCTION(BlueprintCallable, Category = "Bullet")
+	void SendFireRequest(const FVector& SpawnLocation, const FVector& FireDirection);
 
 public:
 	// GameServer

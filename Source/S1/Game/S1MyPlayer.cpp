@@ -11,6 +11,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "S1.h"
+#include "S1GameInstance.h"
 #include "Kismet/KismetMathLibrary.h"
 
 AS1MyPlayer::AS1MyPlayer()
@@ -40,7 +41,6 @@ AS1MyPlayer::AS1MyPlayer()
 	CameraBoom->SetUsingAbsoluteRotation(true);
 	CameraBoom->TargetArmLength = 800.0f; // The camera follows at this distance behind the character	
 	CameraBoom->bUsePawnControlRotation = false; // Rotate the arm based on the controller
-	CameraBoom->SetWorldRotation(FRotator(0.f, -60.f, 0.f));
 
 	// Create a follow camera
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
@@ -73,9 +73,6 @@ void AS1MyPlayer::NotifyControllerChanged()
 		UE_LOG(LogTemp, Error, TEXT("MyPlayer has no PlayerController"));
 		return;
 	}
-
-	PC->SetInputMode(FInputModeGameOnly());
-	PC->SetShowMouseCursor(true);
 
 	UEnhancedInputLocalPlayerSubsystem* Subsystem =
 		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(
@@ -174,4 +171,48 @@ void AS1MyPlayer::Move(const FInputActionValue& Value)
 			DesiredYaw = Rotator.Yaw;
 		}
 	}
+}
+
+void AS1MyPlayer::Fire()
+{
+	APlayerController* PC = Cast<APlayerController>(GetController());
+
+	if (PC == nullptr)
+		return;
+
+	// 마우스 위치에서 월드로 Ray 발사
+	FVector RayOrigin;
+	FVector RayDirection;
+
+	const FVector FirePos = GetActorLocation();
+
+	if (!PC->DeprojectMousePositionToWorld(RayOrigin, RayDirection))
+		return;
+
+	if (FMath::IsNearlyZero(RayDirection.Z))
+		return;
+
+	// RayPoint = RayOrigin + RayDirection * Distance;
+	// Z가 0이 될 때의 Distance 구하면 됨
+	const float Distance = -RayOrigin.Z / RayDirection.Z;
+
+	// 카메라 뒤
+	if (Distance < 0.f)
+		return;
+
+	FVector MouseGroundPos = RayOrigin + RayDirection * Distance;
+	MouseGroundPos.Z = 0.f;
+
+	FVector FireDir = MouseGroundPos - FirePos;
+	FireDir.Z = 0.f;
+
+	if (!FireDir.Normalize())
+		return;
+
+	US1GameInstance* GameInstance = GetGameInstance<US1GameInstance>();
+
+	if (!IsValid(GameInstance))
+		return;
+
+	GameInstance->SendFireRequest(FirePos, FireDir);
 }

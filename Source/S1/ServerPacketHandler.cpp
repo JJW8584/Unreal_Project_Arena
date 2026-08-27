@@ -183,6 +183,11 @@ bool Handle_S_MOVE(PacketSessionRef& session, Protocol::S_MOVE& pkt)
 
 bool Handle_S_FIRE(PacketSessionRef& session, Protocol::S_FIRE& pkt)
 {
+	if (auto* GameInstance = Cast<US1GameInstance>(GWorld->GetGameInstance()))
+	{
+		GameInstance->HandleFire(pkt);
+	}
+
 	return true;
 }
 

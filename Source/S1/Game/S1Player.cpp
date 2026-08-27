@@ -85,7 +85,7 @@ void AS1Player::Tick(float DeltaSeconds)
 		const float Distance = FVector::Dist(Location, DestLocation);
 
 		// 오차가 큰 경우 강제 이동
-		if (Distance >= 150.f)
+		if (Distance >= 100.f)
 		{
 			SetActorLocation(DestLocation);
 		}

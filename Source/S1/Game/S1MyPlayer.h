@@ -45,6 +45,10 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* MoveAction;
 
+public:
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void Fire();
+
 protected:
 	const float MOVE_PACKET_SEND_DELAY = 0.05f;
 	float MovePacketSendTimer = MOVE_PACKET_SEND_DELAY;

@@ -12,13 +12,16 @@
 #include "Protocol.pb.h"
 #include "ServerPacketHandler.h"
 #include "S1MyPlayer.h"
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/ProjectileMovementComponent.h"
+#include "Components/PrimitiveComponent.h"
+#include "HAL/PlatformTime.h"
 
 bool US1GameInstance::RequestLogin()
 {
 	if (Socket == nullptr || !GameServerSession.IsValid())
 		return false;
 
-	//TEMP : Lobby?먯꽌 罹먮┃???좏깮李?
 	Protocol::C_LOGIN Pkt;
 	SEND_PACKET(Pkt);
 
@@ -320,6 +323,10 @@ void US1GameInstance::PrepareMatch()
 	{
 		HandleSpawn(MatchPlayerInfo.player_info());
 	}
+
+	Protocol::C_MATCH_PREPARE Pkt;
+
+	SEND_PACKET(Pkt);
 }
 
 void US1GameInstance::HandlePrepareMatch(const Protocol::S_MATCH_PREPARE& Pkt)
@@ -403,13 +410,71 @@ void US1GameInstance::HandleMove(const Protocol::S_MOVE& MovePkt)
 	Player->SetDestInfo(Info);
 }
 
-void US1GameInstance::Fire()
+void US1GameInstance::SendFireRequest(const FVector& SpawnLocation, const FVector& FireDirection)
 {
 	if (Socket == nullptr || !GameServerSession.IsValid())
 		return;
 
 	Protocol::C_FIRE Pkt;
-	Pkt.set_client_fire_id(LocalObjectId);
+	Pkt.set_object_id(LocalObjectId);
+
+	Pkt.set_spawn_x(SpawnLocation.X);
+	Pkt.set_spawn_y(SpawnLocation.Y);
+	Pkt.set_spawn_z(50.f);
+
+	Pkt.set_direction_x(FireDirection.X);
+	Pkt.set_direction_y(FireDirection.Y);
+	Pkt.set_direction_z(0.f);
 
 	SEND_PACKET(Pkt);
+}
+
+void US1GameInstance::HandleFire(const Protocol::S_FIRE& FirePkt)
+{
+	auto World = GetWorld();
+
+	if (World == nullptr || BulletClass == nullptr)
+		return;
+
+	AS1Player** FoundPlayer = Players.Find(FirePkt.object_id());
+
+	if (FoundPlayer == nullptr || !IsValid(*FoundPlayer))
+		return;
+
+	AS1Player* Player = *FoundPlayer;
+
+	FVector SpawnLocation(FirePkt.spawn_x(), FirePkt.spawn_y(), FirePkt.spawn_z());
+	FVector FireDirection(FirePkt.direction_x(), FirePkt.direction_y(), FirePkt.direction_z());
+
+	const FRotator SpawnRotation = FireDirection.Rotation();
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = Player;
+	SpawnParams.Instigator = Cast<APawn>(Player);
+	// 발사 위치가 플레이어 캡슐 내부일 수 있음
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	AActor* Bullet = World->SpawnActor<AActor>(BulletClass, SpawnLocation, SpawnRotation, SpawnParams);
+
+	if (!IsValid(Bullet))
+		return;
+
+	UProjectileMovementComponent* ProjectileMovement = Bullet->FindComponentByClass<UProjectileMovementComponent>();
+
+	if (ProjectileMovement == nullptr)
+	{
+		Bullet->Destroy();
+		return;
+	}
+
+	UPrimitiveComponent* CollisionComponent = Cast<UPrimitiveComponent>(ProjectileMovement->UpdatedComponent);
+
+	if (CollisionComponent == nullptr)
+	{
+		Bullet->Destroy();
+		return;
+	}
+
+	// Bullet이 이동할 때 발사자와의 충돌 무시
+	CollisionComponent->IgnoreActorWhenMoving(Player, true);
 }
