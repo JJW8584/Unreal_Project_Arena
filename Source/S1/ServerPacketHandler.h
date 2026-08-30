@@ -38,11 +38,12 @@ enum : uint16
 	PKT_S_MOVE = 1022,
 	PKT_C_FIRE = 1023,
 	PKT_S_FIRE = 1024,
-	PKT_S_PLAYER_DESPAWN = 1025,
-	PKT_S_MATCH_END = 1026,
-	PKT_S_RETURN_TO_ROOM = 1027,
-	PKT_C_CHAT = 1028,
-	PKT_S_CHAT = 1029,
+	PKT_C_HIT = 1025,
+	PKT_S_PLAYER_DESPAWN = 1026,
+	PKT_S_MATCH_END = 1027,
+	PKT_S_RETURN_TO_ROOM = 1028,
+	PKT_C_CHAT = 1029,
+	PKT_S_CHAT = 1030,
 };
 
 
@@ -110,6 +111,7 @@ public:
 	static SendBufferRef MakeSendBuffer(Protocol::C_MATCH_PREPARE& pkt) { return MakeSendBuffer(pkt, PKT_C_MATCH_PREPARE); }
 	static SendBufferRef MakeSendBuffer(Protocol::C_MOVE& pkt) { return MakeSendBuffer(pkt, PKT_C_MOVE); }
 	static SendBufferRef MakeSendBuffer(Protocol::C_FIRE& pkt) { return MakeSendBuffer(pkt, PKT_C_FIRE); }
+	static SendBufferRef MakeSendBuffer(Protocol::C_HIT& pkt) { return MakeSendBuffer(pkt, PKT_C_HIT); }
 	static SendBufferRef MakeSendBuffer(Protocol::C_CHAT& pkt) { return MakeSendBuffer(pkt, PKT_C_CHAT); }
 
 private:

@@ -136,7 +136,6 @@ bool Handle_S_ROOM_STATE(PacketSessionRef& session, Protocol::S_ROOM_STATE& pkt)
 
 bool Handle_S_MATCH_PREPARE(PacketSessionRef& session, Protocol::S_MATCH_PREPARE& pkt)
 {
-
 	if (GWorld == nullptr)
 		return false;
 
@@ -153,16 +152,46 @@ bool Handle_S_MATCH_PREPARE(PacketSessionRef& session, Protocol::S_MATCH_PREPARE
 
 bool Handle_S_MATCH_START(PacketSessionRef& session, Protocol::S_MATCH_START& pkt)
 {
+	if (GWorld == nullptr)
+		return false;
+
+	US1GameInstance* GameInstance = Cast<US1GameInstance>(GWorld->GetGameInstance());
+
+	if (GameInstance == nullptr)
+		return false;
+
+	GameInstance->HandleMatchStart(pkt);
+
 	return true;
 }
 
 bool Handle_S_MATCH_STATE(PacketSessionRef& session, Protocol::S_MATCH_STATE& pkt)
 {
+	if (GWorld == nullptr)
+		return false;
+
+	US1GameInstance* GameInstance = Cast<US1GameInstance>(GWorld->GetGameInstance());
+
+	if (GameInstance == nullptr)
+		return false;
+
+	GameInstance->HandleMatchState(pkt);
+
 	return true;
 }
 
 bool Handle_S_PLAYER_STATE(PacketSessionRef& session, Protocol::S_PLAYER_STATE& pkt)
 {
+	if (GWorld == nullptr)
+		return false;
+
+	US1GameInstance* GameInstance = Cast<US1GameInstance>(GWorld->GetGameInstance());
+
+	if (GameInstance == nullptr)
+		return false;
+
+	GameInstance->HandlePlayerState(pkt);
+
 	return true;
 }
 

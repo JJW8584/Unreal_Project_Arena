@@ -114,6 +114,17 @@ void AS1Player::SetMoveState(Protocol::MoveState State)
 	// TODO
 }
 
+void AS1Player::UpdateMatchState(const Protocol::MatchPlayerState& State)
+{
+	PlayerState.Hp = State.hp();
+	PlayerState.MaxHp = State.max_hp();
+	PlayerState.bIsAlive = State.is_alive();
+	PlayerState.KillCount = State.kill_count();
+	PlayerState.DeathCount = State.death_count();
+
+	OnPlayerStateUpdated.Broadcast(PlayerState);
+}
+
 void AS1Player::SetMoveInfo(const Protocol::MoveInfo& Info)
 {
 	PlayerInfo->CopyFrom(Info);

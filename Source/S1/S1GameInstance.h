@@ -83,6 +83,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCreateRoomResult, bool, bSuccess)
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEnterRoomResult, bool, bSuccess);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnRoomStateUpdated);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLeaveRoomResult, bool, bSuccess);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnMatchStateUpdated);
 
 UCLASS()
 class S1_API US1GameInstance : public UGameInstance
@@ -121,7 +122,7 @@ public:
 	//	Lobby
 	//---------
 	
-	// ªı∑Œ∞Ìƒß
+	// ÏÉàÎ°úÍ≥†Ïπ®
 	UFUNCTION(BlueprintCallable)
 	bool RequestRefresh();
 
@@ -133,7 +134,7 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Lobby")
 	FOnRoomListUpdated OnRoomListUpdated;
 
-	// πÊ ª˝º∫
+	// Î∞© ÏÉùÏÑ±
 	UFUNCTION(BlueprintCallable)
 	bool RequestCreateRoom(const FString& RoomName, int32 MaxPlayerCount);
 	
@@ -145,7 +146,7 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Lobby")
 	FOnCreateRoomResult OnCreateRoomResult;
 
-	// πÊ ¿‘¿Â
+	// Î∞© ÏûÖÏû•
 	UFUNCTION(BlueprintCallable)
 	bool RequestEnterRoom(int64 RoomId);
 
@@ -173,25 +174,28 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Room")
 	bool bIsRoomHost = false;
 
-	// πÊ ≥™∞°±‚
+	// Î∞© ÎÇòÍ∞ÄÍ∏∞
 	UFUNCTION(BlueprintCallable)
 	bool RequestLeaveRoom();
 
-	void HandleLeaveRoom(Protocol::S_LEAVE_ROOM& pkt);
+	void HandleLeaveRoom(Protocol::S_LEAVE_ROOM& Pkt);
 
 	UPROPERTY(BlueprintAssignable, Category = "Room")
 	FOnLeaveRoomResult OnLeaveRoomResult;
 
 	//----------
-	//	¿Œ∞‘¿”
+	//	Ïù∏Í≤åÏûÑ
 	//----------
 
-	// ∞‘¿” Ω√¿€
+	// Í≤åÏûÑ ÏãúÏûë
 	UFUNCTION(BlueprintCallable)
 	bool RequestGameStart();
 
 	UFUNCTION(BlueprintCallable)
 	void PrepareMatch();
+
+	void HandleMatchStart(Protocol::S_MATCH_START& Pkt);
+	void HandleMatchState(Protocol::S_MATCH_STATE& Pkt);
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Bullet")
 	TSubclassOf<AActor> BulletClass;
@@ -204,9 +208,37 @@ public:
 
 	void HandleMove(const Protocol::S_MOVE& MovePkt);
 	void HandleFire(const Protocol::S_FIRE& FirePkt);
+	void HandlePlayerState(const Protocol::S_PLAYER_STATE& PlayerStatePkt);
 
 	UFUNCTION(BlueprintCallable, Category = "Bullet")
 	void SendFireRequest(const FVector& SpawnLocation, const FVector& FireDirection);
+
+	UFUNCTION(BlueprintCallable, Category = "Bullet")
+	void RequestHit(AS1Player* TargetPlayer);
+
+	UFUNCTION(BlueprintPure, Category = "Match")
+	int32 GetRemainSeconds() const
+	{
+		return static_cast<int32>(RemainSeconds);
+	}
+
+	UFUNCTION(BlueprintPure, Category = "Match")
+	int32 GetRedScore() const
+	{
+		return static_cast<int32>(RedScore);
+	}
+
+	UFUNCTION(BlueprintPure, Category = "Match")
+	int32 GetBlueScore() const
+	{
+		return static_cast<int32>(BlueScore);
+	}
+
+	UFUNCTION(BlueprintPure, Category = "Match")
+	bool GetMatchPlayerScore(int64 ObjectId, int32& KillCount, int32& DeathCount) const;
+
+	UPROPERTY(BlueprintAssignable, Category = "Match")
+	FOnMatchStateUpdated OnMatchStateUpdated;
 
 public:
 	// GameServer
@@ -216,10 +248,13 @@ public:
 	TSharedPtr<class PacketSession> GameServerSession;
 
 public:
-	// ¿Œ∞‘¿”
+	// Ïù∏Í≤åÏûÑ
 	uint64 MatchId;
-	uint32 DurationSeconds;
-	Protocol::MatchInfo MatchInfo;
+	uint32 RemainSeconds;
+	uint32 RedScore;
+	uint32 BlueScore;
+	TArray<Protocol::MatchPlayerInfo> MatchPlayerInfo;
+	TMap<uint64, Protocol::MatchPlayerState> MatchPlayerState;
 
 public:
 	UPROPERTY(EditAnywhere)

@@ -292,14 +292,14 @@ bool US1GameInstance::RequestLeaveRoom()
 	return true;
 }
 
-void US1GameInstance::HandleLeaveRoom(Protocol::S_LEAVE_ROOM& pkt)
+void US1GameInstance::HandleLeaveRoom(Protocol::S_LEAVE_ROOM& Pkt)
 {
-	if (!pkt.success())
+	if (!Pkt.success())
 		return;
 
 	CurrentRoom = FCurrentRoomState();
 
-	OnLeaveRoomResult.Broadcast(pkt.success());
+	OnLeaveRoomResult.Broadcast(Pkt.success());
 }
 
 bool US1GameInstance::RequestGameStart()
@@ -319,9 +319,9 @@ void US1GameInstance::PrepareMatch()
 	Players.Reset();
 	MyPlayer = nullptr;
 
-	for (const Protocol::MatchPlayerInfo& MatchPlayerInfo : MatchInfo.match_players_info())
+	for (const Protocol::MatchPlayerInfo& PlayerInfo : MatchPlayerInfo)
 	{
-		HandleSpawn(MatchPlayerInfo.player_info());
+		HandleSpawn(PlayerInfo.player_info());
 	}
 
 	Protocol::C_MATCH_PREPARE Pkt;
@@ -329,11 +329,53 @@ void US1GameInstance::PrepareMatch()
 	SEND_PACKET(Pkt);
 }
 
+void US1GameInstance::HandleMatchStart(Protocol::S_MATCH_START& Pkt)
+{
+	if (MatchId != Pkt.match_id())
+		return;
+}
+
+void US1GameInstance::HandleMatchState(Protocol::S_MATCH_STATE& Pkt)
+{
+	if (MatchId != Pkt.match_state().match_id())
+		return;
+
+	RemainSeconds = Pkt.match_state().remaining_time_seconds();
+	RedScore = Pkt.match_state().red_score();
+	BlueScore = Pkt.match_state().blue_score();
+
+	if (RemainSeconds <= 0)
+	{
+		//TODO: ê²½ê¸° ì¢…ë£Œ
+	}
+
+	OnMatchStateUpdated.Broadcast();
+}
+
 void US1GameInstance::HandlePrepareMatch(const Protocol::S_MATCH_PREPARE& Pkt)
 {
+	MatchPlayerInfo.Reset();
+	MatchPlayerState.Reset();
+
 	MatchId = Pkt.match_info().match_id();
-	DurationSeconds = Pkt.match_info().duration_seconds();
-	MatchInfo = Pkt.match_info();
+	RemainSeconds = Pkt.match_info().duration_seconds();
+	RedScore = Pkt.match_info().red_score();
+	BlueScore = Pkt.match_info().blue_score();
+
+	if (Pkt.match_info().match_players_info().size() != Pkt.match_info().match_players_state().size())
+	{
+		//TODO: ìž˜ëª»ëœ íŒ¨í‚·
+		return;
+	}
+
+	for (int32 i = 0; i < Pkt.match_info().match_players_info().size(); i++)
+	{
+		MatchPlayerInfo.Add(Pkt.match_info().match_players_info(i));
+	}
+	for (int32 i = 0; i < Pkt.match_info().match_players_state().size(); i++)
+	{
+		MatchPlayerState.Add({ Pkt.match_info().match_players_info(i).player_info().object_id(), Pkt.match_info().match_players_state(i) });
+	}
 }
 
 void US1GameInstance::HandleSpawn(const Protocol::PlayerInfo& PlayerInfo)
@@ -429,6 +471,24 @@ void US1GameInstance::SendFireRequest(const FVector& SpawnLocation, const FVecto
 	SEND_PACKET(Pkt);
 }
 
+void US1GameInstance::RequestHit(AS1Player* TargetPlayer)
+{
+	if (!IsValid(TargetPlayer) || !GameServerSession.IsValid())
+		return;	
+
+	for (const auto iter : Players)
+	{
+		if (iter.Value != TargetPlayer)
+			continue;
+
+		Protocol::C_HIT HitPkt;
+		HitPkt.set_target_object_id(iter.Key);
+		SEND_PACKET(HitPkt);
+		return;
+	}
+
+}
+
 void US1GameInstance::HandleFire(const Protocol::S_FIRE& FirePkt)
 {
 	auto World = GetWorld();
@@ -451,7 +511,7 @@ void US1GameInstance::HandleFire(const Protocol::S_FIRE& FirePkt)
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = Player;
 	SpawnParams.Instigator = Cast<APawn>(Player);
-	// ¹ß»ç À§Ä¡°¡ ÇÃ·¹ÀÌ¾î Ä¸½¶ ³»ºÎÀÏ ¼ö ÀÖÀ½
+	// ë°œì‚¬ ìœ„ì¹˜ê°€ í”Œë ˆì´ì–´ ìº¡ìŠ ë‚´ë¶€ì¼ ìˆ˜ ìžˆìŒ
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
 	AActor* Bullet = World->SpawnActor<AActor>(BulletClass, SpawnLocation, SpawnRotation, SpawnParams);
@@ -475,6 +535,40 @@ void US1GameInstance::HandleFire(const Protocol::S_FIRE& FirePkt)
 		return;
 	}
 
-	// BulletÀÌ ÀÌµ¿ÇÒ ¶§ ¹ß»çÀÚ¿ÍÀÇ Ãæµ¹ ¹«½Ã
+	// Bulletì´ ì´ë™í•  ë•Œ ë°œì‚¬ìžì™€ì˜ ì¶©ëŒ ë¬´ì‹œ
 	CollisionComponent->IgnoreActorWhenMoving(Player, true);
+}
+
+void US1GameInstance::HandlePlayerState(const Protocol::S_PLAYER_STATE& PlayerStatePkt)
+{
+	const uint64 ObjectId = PlayerStatePkt.object_id();
+
+	Protocol::MatchPlayerState* State = MatchPlayerState.Find(ObjectId);
+
+	if (State == nullptr)
+		return;
+
+	State->CopyFrom(PlayerStatePkt.player_state());
+
+	AS1Player** FoundPlayer = Players.Find(ObjectId);
+
+	if (FoundPlayer == nullptr || !IsValid(*FoundPlayer))
+		return;
+
+
+	(*FoundPlayer)->UpdateMatchState(*State);
+}
+
+bool US1GameInstance::GetMatchPlayerScore(int64 ObjectId, int32& KillCount, int32& DeathCount) const
+{
+	KillCount = 0;
+	DeathCount = 0;
+
+	const Protocol::MatchPlayerState* State = MatchPlayerState.Find(static_cast<uint64>(ObjectId));
+	if (State == nullptr)
+		return false;
+
+	KillCount = static_cast<int32>(State->kill_count());
+	DeathCount = static_cast<int32>(State->death_count());
+	return true;
 }
