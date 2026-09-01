@@ -13,30 +13,32 @@ bool Handle_INVALID(PacketSessionRef& session, BYTE* buffer, int32 len)
 
 bool Handle_S_LOGIN(PacketSessionRef& session, Protocol::S_LOGIN& pkt)
 {
-	if (pkt.success())
-	{
-		if (GWorld == nullptr)
-			return false;
-
-		US1GameInstance* GameInstance = Cast<US1GameInstance>(GWorld->GetGameInstance());
-		if (GameInstance == nullptr)
-			return false;
-
-		if (pkt.object_id() != 0)
-			GameInstance->SetLocalObjectId(pkt.object_id());
-
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Login Success")));
-		
-		UGameplayStatics::OpenLevel(GWorld, FName(TEXT("Lobby")));
-
-		return true;
-	}
-	else
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Login Fail")));
-
+	if (GWorld == nullptr)
 		return false;
-	}
+
+	US1GameInstance* GameInstance = Cast<US1GameInstance>(GWorld->GetGameInstance());
+
+	if (GameInstance == nullptr)
+		return false;
+
+	GameInstance->HandleLogin(pkt);
+
+	return true;
+}
+
+bool Handle_S_REGISTER(PacketSessionRef& session, Protocol::S_REGISTER& pkt)
+{
+	if (GWorld == nullptr)
+		return false;
+
+	US1GameInstance* GameInstance = Cast<US1GameInstance>(GWorld->GetGameInstance());
+
+	if (GameInstance == nullptr)
+		return false;
+
+	GameInstance->HandleRegister(pkt);
+
+	return true;
 }
 
 bool Handle_S_ROOM_LIST(PacketSessionRef& session, Protocol::S_ROOM_LIST& pkt)
@@ -197,11 +199,23 @@ bool Handle_S_PLAYER_STATE(PacketSessionRef& session, Protocol::S_PLAYER_STATE& 
 
 bool Handle_S_PLAYER_RESPAWN(PacketSessionRef& session, Protocol::S_PLAYER_RESPAWN& pkt)
 {
+	if (GWorld == nullptr)
+		return false;
+
+	if (auto* GameInstance = Cast<US1GameInstance>(GWorld->GetGameInstance()))
+	{
+		GameInstance->HandleRespawn(pkt.player_info());
+		GameInstance->HandlePlayerState(pkt.player_info().object_id(), pkt.player_state());
+	}
+
 	return true;
 }
 
 bool Handle_S_MOVE(PacketSessionRef& session, Protocol::S_MOVE& pkt)
 {
+	if (GWorld == nullptr)
+		return false;
+
 	if (auto* GameInstance = Cast<US1GameInstance>(GWorld->GetGameInstance()))
 	{
 		GameInstance->HandleMove(pkt);
@@ -212,6 +226,9 @@ bool Handle_S_MOVE(PacketSessionRef& session, Protocol::S_MOVE& pkt)
 
 bool Handle_S_FIRE(PacketSessionRef& session, Protocol::S_FIRE& pkt)
 {
+	if (GWorld == nullptr)
+		return false;
+
 	if (auto* GameInstance = Cast<US1GameInstance>(GWorld->GetGameInstance()))
 	{
 		GameInstance->HandleFire(pkt);
@@ -222,16 +239,40 @@ bool Handle_S_FIRE(PacketSessionRef& session, Protocol::S_FIRE& pkt)
 
 bool Handle_S_PLAYER_DESPAWN(PacketSessionRef& session, Protocol::S_PLAYER_DESPAWN& pkt)
 {
+	if (GWorld == nullptr)
+		return false;
+
+	if (auto* GameInstance = Cast<US1GameInstance>(GWorld->GetGameInstance()))
+	{
+		GameInstance->HandleDespawn(pkt.object_id());
+	}
+
 	return true;
 }
 
 bool Handle_S_MATCH_END(PacketSessionRef& session, Protocol::S_MATCH_END& pkt)
 {
+	if (GWorld == nullptr)
+		return false;
+
+	if (auto* GameInstance = Cast<US1GameInstance>(GWorld->GetGameInstance()))
+	{
+		GameInstance->HandleMatchEnd(pkt);
+	}
+
 	return true;
 }
 
 bool Handle_S_RETURN_TO_ROOM(PacketSessionRef& session, Protocol::S_RETURN_TO_ROOM& pkt)
 {
+	if (GWorld == nullptr)
+		return false;
+
+	if (auto* GameInstance = Cast<US1GameInstance>(GWorld->GetGameInstance()))
+	{
+		GameInstance->HandleReturnRoom(pkt);
+	}
+
 	return true;
 }
 

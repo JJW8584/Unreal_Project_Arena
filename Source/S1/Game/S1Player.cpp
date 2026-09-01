@@ -84,7 +84,7 @@ void AS1Player::Tick(float DeltaSeconds)
 
 		const float Distance = FVector::Dist(Location, DestLocation);
 
-		// ¿ÀÂ÷°¡ Å« °æ¿ì °­Á¦ ÀÌµ¿
+		// ì˜¤ì°¨ê°€ í° ê²½ìš° ê°•ì œ ì´ë™
 		if (Distance >= 100.f)
 		{
 			SetActorLocation(DestLocation);
@@ -135,9 +135,9 @@ void AS1Player::SetMoveInfo(const Protocol::MoveInfo& Info)
 
 void AS1Player::SetDestInfo(const Protocol::MoveInfo& Info)
 {
-	// Dest¿¡ ÃÖÁ¾ »óÅÂ º¹»ç
+	// Destì— ìµœì¢… ìƒíƒœ ë³µì‚¬
 	DestInfo->CopyFrom(Info);
 
-	// »óÅÂ Àû¿ë
+	// ìƒíƒœ ì ìš©
 	SetMoveState(Info.state());
 }

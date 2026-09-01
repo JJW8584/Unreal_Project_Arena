@@ -27,6 +27,9 @@ struct FRoomPlayerItem
 	int64 ObjectId = 0;
 
 	UPROPERTY(BlueprintReadOnly)
+	FString Nickname;
+
+	UPROPERTY(BlueprintReadOnly)
 	ERoomTeam Team = ERoomTeam::None;
 
 	UPROPERTY(BlueprintReadOnly)
@@ -84,6 +87,10 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEnterRoomResult, bool, bSuccess);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnRoomStateUpdated);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLeaveRoomResult, bool, bSuccess);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnMatchStateUpdated);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnMatchStarted);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnMatchPlayerScoreUpdated, int64, ObjectId, int32, KillCount, int32, DeathCount);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnMatchEnded, ERoomTeam, WinnerTeam, int32, FinalRedScore, int32, FinalBlueScore);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnRegisterResult, bool, bSuccess, FString, Message);
 
 UCLASS()
 class S1_API US1GameInstance : public UGameInstance
@@ -113,9 +120,33 @@ public:
 	}
 
 public:
-	// Login
-	UFUNCTION(BlueprintCallable)
-	bool RequestLogin();
+	//---------
+	//	Login
+	//---------
+	
+	// 회원가입
+	UFUNCTION(BlueprintCallable, Category = "Auth")
+	bool RequestRegister(const FString& LoginId, const FString& Password, const FString& Nickname);
+	void HandleRegister(const Protocol::S_REGISTER& Pkt);
+
+	UPROPERTY(BlueprintAssignable, Category = "Auth")
+	FOnRegisterResult OnRegisterResult;
+
+	// 로그인
+	UFUNCTION(BlueprintCallable, Category = "Auth")
+	bool RequestLogin(const FString& LoginId, const FString& Password);
+	void HandleLogin(const Protocol::S_LOGIN& Pkt);
+
+	uint64 GetLocalAccountId() const
+	{
+		return LocalAccountId;
+	}
+
+	UFUNCTION(BlueprintPure, Category = "Auth")
+	FString GetLocalNickname() const
+	{
+		return LocalNickname;
+	}
 
 
 	//---------
@@ -200,15 +231,24 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Bullet")
 	TSubclassOf<AActor> BulletClass;
 
+	//게임 종료
+	UFUNCTION(BlueprintCallable)
+	bool RequestReturnRoom();
+	void HandleReturnRoom(Protocol::S_RETURN_TO_ROOM& Pkt);
+
 public:
 	void HandlePrepareMatch(const Protocol::S_MATCH_PREPARE& Pkt);
 	void HandleSpawn(const Protocol::PlayerInfo& PlayerInfo);
 
 	void HandleDespawn(uint64 ObjectId);
+	void HandleRespawn(const Protocol::PlayerInfo& PlayerInfo);
 
 	void HandleMove(const Protocol::S_MOVE& MovePkt);
 	void HandleFire(const Protocol::S_FIRE& FirePkt);
 	void HandlePlayerState(const Protocol::S_PLAYER_STATE& PlayerStatePkt);
+	void HandlePlayerState(const uint64 ObjectId, const Protocol::MatchPlayerState& PlayerState);
+
+	void HandleMatchEnd(const Protocol::S_MATCH_END& EndPkt);
 
 	UFUNCTION(BlueprintCallable, Category = "Bullet")
 	void SendFireRequest(const FVector& SpawnLocation, const FVector& FireDirection);
@@ -240,6 +280,15 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Match")
 	FOnMatchStateUpdated OnMatchStateUpdated;
 
+	UPROPERTY(BlueprintAssignable, Category = "Match")
+	FOnMatchStarted OnMatchStarted;
+
+	UPROPERTY(BlueprintAssignable, Category = "Match")
+	FOnMatchPlayerScoreUpdated OnMatchPlayerScoreUpdated;
+
+	UPROPERTY(BlueprintAssignable, Category = "Match")
+	FOnMatchEnded OnMatchEnded;
+
 public:
 	// GameServer
 	class FSocket* Socket = nullptr;
@@ -265,4 +314,6 @@ public:
 
 private:
 	uint64 LocalObjectId = 0;
+	uint64 LocalAccountId = 0;
+	FString LocalNickname;
 };

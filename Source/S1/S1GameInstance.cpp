@@ -16,16 +16,189 @@
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Components/PrimitiveComponent.h"
 #include "HAL/PlatformTime.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
 
-bool US1GameInstance::RequestLogin()
+bool US1GameInstance::RequestRegister(const FString& LoginId, const FString& Password, const FString& Nickname)
 {
 	if (Socket == nullptr || !GameServerSession.IsValid())
 		return false;
 
-	Protocol::C_LOGIN Pkt;
+	const FString TrimmedLoginId = LoginId.TrimStartAndEnd();
+
+	if (TrimmedLoginId.Len() < 4 || TrimmedLoginId.Len() > 64)
+		return false;
+
+	const FString TrimmedNickname = Nickname.TrimStartAndEnd();
+
+	if (TrimmedNickname.Len() < 2 || TrimmedNickname.Len() > 16)
+		return false;
+
+	if (Password.Len() < 8 || Password.Len() > 128)
+		return false;
+
+	for (const TCHAR Ch : TrimmedLoginId)
+	{
+		const bool bIsAsciiLetter = (Ch >= TEXT('a') && Ch <= TEXT('z')) || (Ch >= TEXT('A') && Ch <= TEXT('Z'));
+		const bool bIsDigit = Ch >= TEXT('0') && Ch <= TEXT('9');
+
+		if (!bIsAsciiLetter && !bIsDigit)
+			return false;
+	}
+
+	FTCHARToUTF8 LoginIdUtf8(*TrimmedLoginId);
+	FTCHARToUTF8 PasswordUtf8(*Password);
+	FTCHARToUTF8 NicknameUtf8(*TrimmedNickname);
+
+	Protocol::C_REGISTER Pkt;
+	Pkt.set_login_id(LoginIdUtf8.Get(), static_cast<size_t>(LoginIdUtf8.Length()));
+	Pkt.set_password(PasswordUtf8.Get(), static_cast<size_t>(PasswordUtf8.Length()));
+	Pkt.set_nickname(NicknameUtf8.Get(), static_cast<size_t>(NicknameUtf8.Length()));
+
 	SEND_PACKET(Pkt);
 
 	return true;
+}
+
+void US1GameInstance::HandleRegister(const Protocol::S_REGISTER& Pkt)
+{
+	const bool bRegisterSucceeded = Pkt.success() && Pkt.result() == Protocol::AUTH_RESULT_SUCCESS;
+
+	FString ResultMessage;
+
+	if (bRegisterSucceeded)
+	{
+		ResultMessage = TEXT("회원가입에 성공했습니다.");
+	}
+	else
+	{
+		switch (Pkt.result())
+		{
+		case Protocol::AUTH_RESULT_INVALID_INPUT:
+			ResultMessage =
+				TEXT("입력한 회원정보의 형식이 올바르지 않습니다.");
+			break;
+
+		case Protocol::AUTH_RESULT_DUPLICATE_LOGIN_ID:
+			ResultMessage =
+				TEXT("이미 사용 중인 아이디입니다.");
+			break;
+
+		case Protocol::AUTH_RESULT_DUPLICATE_NICKNAME:
+			ResultMessage =
+				TEXT("이미 사용 중인 닉네임입니다.");
+			break;
+
+		case Protocol::AUTH_RESULT_SERVER_ERROR:
+			ResultMessage =
+				TEXT("서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+			break;
+
+		default:
+			ResultMessage =
+				TEXT("회원가입에 실패했습니다.");
+			break;
+		}
+	}
+
+	// 블루프린트 위젯에 결과 전달
+	OnRegisterResult.Broadcast(bRegisterSucceeded, ResultMessage);
+
+	if (GEngine != nullptr)
+	{
+		const FColor MessageColor = bRegisterSucceeded ? FColor::Green : FColor::Red;
+
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, MessageColor, ResultMessage);
+	}
+}
+
+bool US1GameInstance::RequestLogin(const FString& LoginId, const FString& Password)
+{
+	if (Socket == nullptr || !GameServerSession.IsValid())
+		return false;
+
+	const FString TrimmedLoginId = LoginId.TrimStartAndEnd();
+
+	if (TrimmedLoginId.Len() < 4 || TrimmedLoginId.Len() > 64)
+		return false;
+
+	if (Password.Len() < 8 || Password.Len() > 128)
+		return false;
+
+	for (const TCHAR Ch : TrimmedLoginId)
+	{
+		if (!FChar::IsAlnum(Ch))
+			return false;
+	}
+
+	FTCHARToUTF8 LoginIdUtf8(*TrimmedLoginId);
+	FTCHARToUTF8 PasswordUtf8(*Password);
+
+	Protocol::C_LOGIN Pkt;
+	Pkt.set_login_id(LoginIdUtf8.Get(), static_cast<size_t>(LoginIdUtf8.Length()));
+	Pkt.set_password(PasswordUtf8.Get(), static_cast<size_t>(PasswordUtf8.Length()));
+
+	SEND_PACKET(Pkt);
+
+	return true;
+}
+
+void US1GameInstance::HandleLogin(const Protocol::S_LOGIN& Pkt)
+{
+	const bool bLoginSucceeded = Pkt.success() && Pkt.result() == Protocol::AUTH_RESULT_SUCCESS;
+
+	if (!bLoginSucceeded)
+	{
+		FString ErrorMessage;
+
+		switch (Pkt.result())
+		{
+		case Protocol::AUTH_RESULT_INVALID_INPUT:
+			ErrorMessage = TEXT("아이디 또는 비밀번호 형식이 올바르지 않습니다.");
+			break;
+
+		case Protocol::AUTH_RESULT_INVALID_CREDENTIALS:
+			ErrorMessage = TEXT("아이디 또는 비밀번호가 올바르지 않습니다.");
+			break;
+
+		case Protocol::AUTH_RESULT_SERVER_ERROR:
+			ErrorMessage = TEXT("서버 오류가 발생했습니다.");
+			break;
+
+		default:
+			ErrorMessage = TEXT("로그인에 실패했습니다.");
+			break;
+		}
+
+		if (GEngine != nullptr)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, ErrorMessage);
+		}
+
+		return;
+	}
+
+	// 성공 패킷 유효성 검사
+	if (Pkt.account_id() == 0 || Pkt.object_id() == 0)
+	{
+		if (GEngine != nullptr)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("잘못된 로그인 응답입니다."));
+		}
+
+		return;
+	}
+
+	LocalAccountId = Pkt.account_id();
+	LocalObjectId = Pkt.object_id();
+	LocalNickname = UTF8_TO_TCHAR(Pkt.nickname().c_str());
+
+	if (GEngine != nullptr)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("%s 로그인 성공"), *LocalNickname));
+	}
+
+	UGameplayStatics::OpenLevel(this, FName(TEXT("Lobby")));
 }
 
 bool US1GameInstance::RequestRefresh()
@@ -100,6 +273,7 @@ void US1GameInstance::UpdateCurrentRoom(const Protocol::RoomInfo& Info)
 	{
 		FRoomPlayerItem Item;
 		Item.ObjectId = static_cast<int64>(Player.object_id());
+		Item.Nickname = UTF8_TO_TCHAR(Player.nickname().c_str());
 		Item.Ready = Player.ready();
 		
 		switch (Player.team())
@@ -333,6 +507,8 @@ void US1GameInstance::HandleMatchStart(Protocol::S_MATCH_START& Pkt)
 {
 	if (MatchId != Pkt.match_id())
 		return;
+
+	OnMatchStarted.Broadcast();
 }
 
 void US1GameInstance::HandleMatchState(Protocol::S_MATCH_STATE& Pkt)
@@ -350,6 +526,36 @@ void US1GameInstance::HandleMatchState(Protocol::S_MATCH_STATE& Pkt)
 	}
 
 	OnMatchStateUpdated.Broadcast();
+}
+
+bool US1GameInstance::RequestReturnRoom()
+{
+	if (Socket == nullptr || !GameServerSession.IsValid())
+		return false;
+
+	Protocol::C_RETURN_TO_ROOM Pkt;
+
+	SEND_PACKET(Pkt);
+
+	return true;
+}
+
+void US1GameInstance::HandleReturnRoom(Protocol::S_RETURN_TO_ROOM& Pkt)
+{
+	if (!Pkt.has_room_info())
+	{
+		return;
+	}
+
+	UpdateCurrentRoom(Pkt.room_info());
+
+	Players.Reset();
+	MyPlayer = nullptr;
+
+	MatchPlayerInfo.Reset();
+	MatchPlayerState.Reset();
+
+	UGameplayStatics::OpenLevel(this, FName(TEXT("Lobby")));
 }
 
 void US1GameInstance::HandlePrepareMatch(const Protocol::S_MATCH_PREPARE& Pkt)
@@ -386,7 +592,7 @@ void US1GameInstance::HandleSpawn(const Protocol::PlayerInfo& PlayerInfo)
 	bool IsMine = LocalObjectId == PlayerInfo.object_id();
 
 	FVector SpawnLocation(PlayerInfo.move_info().x(), PlayerInfo.move_info().y(), PlayerInfo.move_info().z());
-
+	
 	if (IsMine)
 	{
 		auto* PC = UGameplayStatics::GetPlayerController(this, 0);
@@ -394,8 +600,14 @@ void US1GameInstance::HandleSpawn(const Protocol::PlayerInfo& PlayerInfo)
 		if (Player == nullptr)
 			return;
 
+		Player->SetNickname(LocalNickname);
 		Player->SetMoveInfo(PlayerInfo.move_info());
 		Player->SetDestInfo(PlayerInfo.move_info());
+
+		if (const Protocol::MatchPlayerState* State = MatchPlayerState.Find(PlayerInfo.object_id()))
+		{
+			Player->UpdateMatchState(*State);
+		}
 
 		MyPlayer = Player;
 		Players.Add(PlayerInfo.object_id(), Player);
@@ -407,10 +619,18 @@ void US1GameInstance::HandleSpawn(const Protocol::PlayerInfo& PlayerInfo)
 		if (Player == nullptr)
 			return;
 
+		Player->SetNickname(UTF8_TO_TCHAR(PlayerInfo.nickname().c_str()));
 		Player->SetMoveInfo(PlayerInfo.move_info());
 		Player->SetDestInfo(PlayerInfo.move_info());
+
+		if (const Protocol::MatchPlayerState* State = MatchPlayerState.Find(PlayerInfo.object_id()))
+		{
+			Player->UpdateMatchState(*State);
+		}
+
 		Players.Add(PlayerInfo.object_id(), Player);
 	}
+
 }
 
 void US1GameInstance::HandleDespawn(uint64 ObjectId)
@@ -423,10 +643,60 @@ void US1GameInstance::HandleDespawn(uint64 ObjectId)
 		return;
 
 	AS1Player** FindActor = Players.Find(ObjectId);
-	if (FindActor == nullptr)
+	if (FindActor == nullptr || !IsValid(*FindActor))
 		return;
 
-	World->DestroyActor(*FindActor);
+	AS1Player* Player = *FindActor;
+	Player->SetActorHiddenInGame(true);
+	Player->SetActorEnableCollision(false);
+	Player->SetActorTickEnabled(false);
+
+	if (UCharacterMovementComponent* Movement = Player->GetCharacterMovement())
+	{
+		Movement->StopMovementImmediately();
+		Movement->DisableMovement();
+	}
+
+	if (Player->IsMyPlayer())
+	{
+		if (APlayerController* PC = Cast<APlayerController>(Player->GetController()))
+		{
+			Player->DisableInput(PC);
+		}
+	}
+}
+
+void US1GameInstance::HandleRespawn(const Protocol::PlayerInfo& PlayerInfo)
+{
+	if (Socket == nullptr || !GameServerSession.IsValid())
+		return;
+
+	AS1Player** FindActor = Players.Find(PlayerInfo.object_id());
+	if (FindActor == nullptr || !IsValid(*FindActor))
+		return;
+
+	AS1Player* Player = *FindActor;
+	Player->SetActorHiddenInGame(false);
+	Player->SetActorEnableCollision(true);
+	Player->SetActorTickEnabled(true);
+
+	if (UCharacterMovementComponent* Movement = Player->GetCharacterMovement())
+	{
+		Movement->StopMovementImmediately();
+		Movement->SetMovementMode(MOVE_Walking);
+	}
+
+	Player->SetMoveInfo(PlayerInfo.move_info());
+	Player->SetDestInfo(PlayerInfo.move_info());
+
+
+	if (Player->IsMyPlayer())
+	{
+		if (APlayerController* PC = Cast<APlayerController>(Player->GetController()))
+		{
+			Player->EnableInput(PC);
+		}
+	}
 }
 
 void US1GameInstance::HandleMove(const Protocol::S_MOVE& MovePkt)
@@ -557,6 +827,66 @@ void US1GameInstance::HandlePlayerState(const Protocol::S_PLAYER_STATE& PlayerSt
 
 
 	(*FoundPlayer)->UpdateMatchState(*State);
+	OnMatchPlayerScoreUpdated.Broadcast(static_cast<int64>(ObjectId), static_cast<int32>(State->kill_count()), static_cast<int32>(State->death_count()));
+}
+
+void US1GameInstance::HandlePlayerState(const uint64 ObjectId, const Protocol::MatchPlayerState& PlayerState)
+{
+	Protocol::MatchPlayerState* State = MatchPlayerState.Find(ObjectId);
+
+	if (State == nullptr)
+		return;
+
+	State->CopyFrom(PlayerState);
+
+	AS1Player** FoundPlayer = Players.Find(ObjectId);
+
+	if (FoundPlayer == nullptr || !IsValid(*FoundPlayer))
+		return;
+
+
+	(*FoundPlayer)->UpdateMatchState(*State);
+	OnMatchPlayerScoreUpdated.Broadcast(static_cast<int64>(ObjectId), static_cast<int32>(State->kill_count()), static_cast<int32>(State->death_count()));
+}
+
+void US1GameInstance::HandleMatchEnd(const Protocol::S_MATCH_END& EndPkt)
+{
+	UWorld* World = GetWorld();
+	if (World == nullptr)
+		return;
+
+	const Protocol::MatchResult& Result = EndPkt.result();
+
+	RedScore = Result.red_score();
+	BlueScore = Result.blue_score();
+	RemainSeconds = 0;
+
+	ERoomTeam WinnerTeam = ERoomTeam::None;
+
+	switch (Result.winner_team())
+	{
+	case Protocol::TEAM_RED:
+		WinnerTeam = ERoomTeam::Red;
+		break;
+
+	case Protocol::TEAM_BLUE:
+		WinnerTeam = ERoomTeam::Blue;
+		break;
+
+	case Protocol::TEAM_NONE:
+	default:
+		WinnerTeam = ERoomTeam::None;
+		break;
+	}
+
+	// 캐릭터, 투사체, 액터 Tick과 물리 등을 정지
+	UGameplayStatics::SetGamePaused(World, true);
+
+	// 기존 상단 점수 HUD도 마지막 점수로 갱신
+	OnMatchStateUpdated.Broadcast();
+
+	// 결과창 생성은 블루프린트에서 처리
+	OnMatchEnded.Broadcast(WinnerTeam, static_cast<int32>(RedScore), static_cast<int32>(BlueScore));
 }
 
 bool US1GameInstance::GetMatchPlayerScore(int64 ObjectId, int32& KillCount, int32& DeathCount) const

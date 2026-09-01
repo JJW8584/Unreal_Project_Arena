@@ -60,8 +60,13 @@ public:
 	void SetDestInfo(const Protocol::MoveInfo& Info);
 	Protocol::MoveInfo* GetPlayerInfo() { return PlayerInfo; }
 
+	void SetNickname(const FString& InNickname) { Nickname = InNickname; }
+	UFUNCTION(BlueprintPure, Category = "Auth")
+	FString GetNickname() const { return Nickname; }
 
 protected:
+	FString Nickname;
+
 	FMatchPlayerStateData PlayerState;
 	class Protocol::MoveInfo* PlayerInfo; // 현재 위치
 	class Protocol::MoveInfo* DestInfo; // 목적지
