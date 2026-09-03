@@ -127,9 +127,13 @@ void AS1MyPlayer::Tick(float DeltaTime)
 		Protocol::C_MOVE MovePkt;
 		//현재 위치 정보
 		{
-			Protocol::MoveInfo* Info = MovePkt.mutable_move_info();
-			Info->CopyFrom(*PlayerInfo);
-			Info->set_yaw(DesiredYaw);
+			Protocol::MoveInput* Input = MovePkt.mutable_move_input();
+			Input->set_input_seq(MoveInputSeq);
+			Input->set_client_tick(ClientMoveTick);
+			Input->set_dir_x(DesiredMoveDirection.X);
+			Input->set_dir_y(DesiredMoveDirection.Y);
+			Input->set_yaw(DesiredYaw);
+			Input->set_state(GetMoveState());
 		}
 
 		SEND_PACKET(MovePkt);

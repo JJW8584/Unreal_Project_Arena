@@ -53,6 +53,9 @@ protected:
 	const float MOVE_PACKET_SEND_DELAY = 0.05f;
 	float MovePacketSendTimer = MOVE_PACKET_SEND_DELAY;
 
+	uint32 MoveInputSeq = 0;
+	uint32 ClientMoveTick = 0;
+
 	// Cache
 	FVector2D DesiredInput;
 	FVector DesiredMoveDirection;
