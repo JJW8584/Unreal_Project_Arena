@@ -129,7 +129,7 @@ void AS1MyPlayer::Tick(float DeltaTime)
 		{
 			Protocol::MoveInfo* Info = MovePkt.mutable_move_info();
 			Info->CopyFrom(*PlayerInfo);
-			Info->set_yaw(DesiredYaw);
+			Info->set_yaw(GetActorRotation().Yaw);
 		}
 
 		SEND_PACKET(MovePkt);

@@ -50,7 +50,7 @@ public:
 	void Fire();
 
 protected:
-	const float MOVE_PACKET_SEND_DELAY = 0.05f;
+	const float MOVE_PACKET_SEND_DELAY = 1.f / 30.f;
 	float MovePacketSendTimer = MOVE_PACKET_SEND_DELAY;
 
 	// Cache

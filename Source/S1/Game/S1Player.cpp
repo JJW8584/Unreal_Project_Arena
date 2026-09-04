@@ -55,13 +55,15 @@ void AS1Player::BeginPlay()
 {
 	Super::BeginPlay();
 
-	{
-		FVector Location = GetActorLocation();
-		DestInfo->set_x(Location.X);
-		DestInfo->set_y(Location.Y);
-		DestInfo->set_z(Location.Z);
-		DestInfo->set_yaw(GetControlRotation().Yaw);
+	FVector Location = GetActorLocation();
+	DestInfo->set_x(Location.X);
+	DestInfo->set_y(Location.Y);
+	DestInfo->set_z(Location.Z);
+	DestInfo->set_yaw(GetControlRotation().Yaw);
 
+	if (!IsMyPlayer())
+	{
+		UCharacterMovementComponent* Movement = GetCharacterMovement();
 	}
 }
 
@@ -77,24 +79,39 @@ void AS1Player::Tick(float DeltaSeconds)
 		PlayerInfo->set_yaw(GetControlRotation().Yaw);
 	}
 
-	if (IsMyPlayer() == false)
+	if (!IsMyPlayer())
 	{
+
 		FVector Location = GetActorLocation();
 		FVector DestLocation = FVector(DestInfo->x(), DestInfo->y(), DestInfo->z());
 
-		const float Distance = FVector::Dist(Location, DestLocation);
-
-		// 오차가 큰 경우 강제 이동
-		if (Distance >= 100.f)
-		{
-			SetActorLocation(DestLocation);
-		}
-
 		const Protocol::MoveState State = PlayerInfo->state();
-		if (State == Protocol::MOVE_STATE_MOVE)
+
+		FVector ToTarget = DestLocation - Location;
+		ToTarget.Z = 0.f;
+
+		const float Distance2D = ToTarget.Size();
+		UCharacterMovementComponent* Movement = GetCharacterMovement();
+
+
+		constexpr float TargetTolerance = 2.f;
+
+		
+		const float ArrivalDistance = FMath::Max(TargetTolerance, Movement->Velocity.Size2D() * DeltaSeconds);
+
+		if (Distance2D > ArrivalDistance)
 		{
-			SetActorRotation(FMath::RInterpTo(GetActorRotation(), FRotator(0, DestInfo->yaw(), 0), DeltaSeconds, 15.f));
-			AddMovementInput(GetActorForwardVector());
+			// 입력이 끝난 후 남은 위치 오차를 따라잡음
+			const FVector MoveDirection = ToTarget.GetSafeNormal();
+
+			AddMovementInput(MoveDirection);
+
+			SetActorRotation(FMath::RInterpTo(GetActorRotation(), MoveDirection.Rotation(), DeltaSeconds, 15.f));
+		}
+		else
+		{
+			Movement->StopMovementImmediately();
+			SetActorLocation(DestLocation, false);
 		}
 	}
 }
