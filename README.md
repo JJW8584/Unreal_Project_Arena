@@ -112,11 +112,6 @@ MMOClient/
 - 문제: 작업 스레드에서 Actor나 Widget을 직접 변경하면 Unreal Game Thread 규칙과 충돌할 수 있습니다.
 - 해결: 작업 스레드는 완성된 패킷을 수신 큐에만 저장하고, Game Thread의 `HandleRecvPackets`가 패킷 처리와 월드·UI 갱신을 수행하도록 분리했습니다.
 
-### 인증 실패 원인의 UI 전달
-
-- 문제: 로그인 실패가 화면 디버그 메시지에만 표시되어 실제 로그인 위젯이 실패 원인을 처리하기 어려웠습니다.
-- 해결: `OnLoginFailed` Blueprint Delegate로 잘못된 자격 증명, 중복 로그인, 서버 오류 메시지를 UI에 전달하도록 구성했습니다.
-
 ## 실행 방법
 
 1. [서버 저장소](https://github.com/JJW8584/Server_CPP)의 `Server.sln`을 빌드하고 `GameServer`를 먼저 실행합니다.
@@ -136,6 +131,3 @@ MMOClient/
 ## 영상 링크
 
 - 플레이 영상: 준비 중
-- 기술 설명 영상: 준비 중
-
-영상이 업로드되면 이 항목에 YouTube 또는 포트폴리오 링크를 추가합니다.
