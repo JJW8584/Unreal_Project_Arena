@@ -591,7 +591,7 @@ void US1GameInstance::HandleSpawn(const Protocol::PlayerInfo& PlayerInfo)
 
 	bool IsMine = LocalObjectId == PlayerInfo.object_id();
 
-	FVector SpawnLocation(PlayerInfo.move_info().x(), PlayerInfo.move_info().y(), PlayerInfo.move_info().z());
+	FVector SpawnLocation(PlayerInfo.move_info().x(), PlayerInfo.move_info().y(), 100.f);
 	
 	if (IsMine)
 	{
@@ -601,8 +601,9 @@ void US1GameInstance::HandleSpawn(const Protocol::PlayerInfo& PlayerInfo)
 			return;
 
 		Player->SetNickname(LocalNickname);
-		Player->SetMoveInfo(PlayerInfo.move_info());
-		Player->SetDestInfo(PlayerInfo.move_info());
+
+		const Protocol::MoveInfo& MoveInfo = PlayerInfo.move_info();
+		Player->TeleportToServerPosition(MoveInfo.x(), MoveInfo.y());
 
 		if (const Protocol::MatchPlayerState* State = MatchPlayerState.Find(PlayerInfo.object_id()))
 		{
@@ -620,8 +621,9 @@ void US1GameInstance::HandleSpawn(const Protocol::PlayerInfo& PlayerInfo)
 			return;
 
 		Player->SetNickname(UTF8_TO_TCHAR(PlayerInfo.nickname().c_str()));
-		Player->SetMoveInfo(PlayerInfo.move_info());
-		Player->SetDestInfo(PlayerInfo.move_info());
+
+		const Protocol::MoveInfo& MoveInfo = PlayerInfo.move_info();
+		Player->TeleportToServerPosition(MoveInfo.x(), MoveInfo.y());
 
 		if (const Protocol::MatchPlayerState* State = MatchPlayerState.Find(PlayerInfo.object_id()))
 		{
@@ -686,9 +688,8 @@ void US1GameInstance::HandleRespawn(const Protocol::PlayerInfo& PlayerInfo)
 		Movement->SetMovementMode(MOVE_Walking);
 	}
 
-	Player->SetMoveInfo(PlayerInfo.move_info());
-	Player->SetDestInfo(PlayerInfo.move_info());
-
+	const Protocol::MoveInfo& MoveInfo = PlayerInfo.move_info();
+	Player->TeleportToServerPosition(MoveInfo.x(), MoveInfo.y());
 
 	if (Player->IsMyPlayer())
 	{
@@ -704,22 +705,29 @@ void US1GameInstance::HandleMove(const Protocol::S_MOVE& MovePkt)
 	if (Socket == nullptr || GameServerSession == nullptr)
 		return;
 
-	auto* World = GetWorld();
-	if (World == nullptr)
-		return;
 
 	const uint64 ObjectId = MovePkt.player_info().object_id();
 	AS1Player** FindActor = Players.Find(ObjectId);
-	if (FindActor == nullptr)
+	if (FindActor == nullptr || *FindActor == nullptr)
 		return;
 
 	AS1Player* Player = (*FindActor);
-	if (Player->IsMyPlayer())
-		return;
+	const Protocol::MoveInfo& MoveInfo = MovePkt.player_info().move_info();
 
-	const Protocol::MoveInfo& Info = MovePkt.player_info().move_info();
+	if (Player->IsMyPlayer())
+	{
+		// 입력을 놓았을 때 서버 최종 위치로 맞춤
+		if (MoveInfo.state() == Protocol::MOVE_STATE_IDLE)
+		{
+			Player->TeleportToServerPosition(MoveInfo.x(), MoveInfo.y());
+		}
+
+		return;
+	}
+
+	//const Protocol::MoveInfo& Info = MovePkt.player_info().move_info();
 	//Player->SetPlayerInfo(Info);
-	Player->SetDestInfo(Info);
+	Player->SetServerMoveTarget(MoveInfo.x(), MoveInfo.y());
 }
 
 void US1GameInstance::SendFireRequest(const FVector& SpawnLocation, const FVector& FireDirection)

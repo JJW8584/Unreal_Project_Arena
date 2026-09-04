@@ -45,20 +45,20 @@ protected:
 	virtual void Tick(float DeltaSeconds) override;
 
 public:
-	bool IsMyPlayer();
-
-	Protocol::MoveState GetMoveState() { return PlayerInfo->state(); }
-	void SetMoveState(Protocol::MoveState State);
+	bool IsMyPlayer() const;
 
 	void UpdateMatchState(const Protocol::MatchPlayerState& State);
+
+	// 스폰, 리스폰, 로컬 최종 보정
+	void TeleportToServerPosition(float X, float Y);
+
+	// 원격 플레이어 이동 패킷
+	void SetServerMoveTarget(float X, float Y);
 
 	UPROPERTY(BlueprintAssignable, Category = "Match")
 	FOnPlayerStateUpdated OnPlayerStateUpdated;
 
 public:
-	void SetMoveInfo(const Protocol::MoveInfo& Info);
-	void SetDestInfo(const Protocol::MoveInfo& Info);
-	Protocol::MoveInfo* GetPlayerInfo() { return PlayerInfo; }
 
 	void SetNickname(const FString& InNickname) { Nickname = InNickname; }
 	UFUNCTION(BlueprintPure, Category = "Auth")
@@ -66,8 +66,8 @@ public:
 
 protected:
 	FString Nickname;
-
 	FMatchPlayerStateData PlayerState;
-	class Protocol::MoveInfo* PlayerInfo; // 현재 위치
-	class Protocol::MoveInfo* DestInfo; // 목적지
+
+	// 원격 캐릭터가 따라갈 서버 위치
+	FVector2D ServerMoveTarget = FVector2D::ZeroVector;
 };

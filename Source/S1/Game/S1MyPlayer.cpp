@@ -112,12 +112,6 @@ void AS1MyPlayer::Tick(float DeltaTime)
 		LastDesiredInput = DesiredInput;
 	}
 
-	// State 정보
-	if (DesiredInput == FVector2D::Zero())
-		SetMoveState(Protocol::MOVE_STATE_IDLE);
-	else
-		SetMoveState(Protocol::MOVE_STATE_MOVE);
-
 	MovePacketSendTimer -= DeltaTime;
 
 	if (MovePacketSendTimer <= 0 || ForceSendPacket)
@@ -128,12 +122,13 @@ void AS1MyPlayer::Tick(float DeltaTime)
 		//현재 위치 정보
 		{
 			Protocol::MoveInput* Input = MovePkt.mutable_move_input();
-			Input->set_input_seq(MoveInputSeq);
-			Input->set_client_tick(ClientMoveTick);
-			Input->set_dir_x(DesiredMoveDirection.X);
-			Input->set_dir_y(DesiredMoveDirection.Y);
-			Input->set_yaw(DesiredYaw);
-			Input->set_state(GetMoveState());
+			Input->set_input_seq(++MoveInputSeq);
+			Input->set_client_tick(++ClientMoveTick);
+			Input->set_axis_x(FMath::RoundToInt(DesiredInput.X));
+			Input->set_axis_y(FMath::RoundToInt(DesiredInput.Y));
+			//Input->set_dir_x(DesiredMoveDirection.X);
+			//Input->set_dir_y(DesiredMoveDirection.Y);
+			//Input->set_yaw(DesiredYaw);
 		}
 
 		SEND_PACKET(MovePkt);
@@ -158,8 +153,8 @@ void AS1MyPlayer::Move(const FInputActionValue& Value)
 		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
 		// add movement 
-		AddMovementInput(ForwardDirection, MovementVector.Y);
-		AddMovementInput(RightDirection, MovementVector.X);
+		AddMovementInput(FVector::ForwardVector, MovementVector.Y);
+		AddMovementInput(FVector::RightVector, MovementVector.X);
 
 		// Cache
 		{

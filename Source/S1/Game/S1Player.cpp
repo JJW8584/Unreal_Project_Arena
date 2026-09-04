@@ -37,82 +37,81 @@ AS1Player::AS1Player()
 	GetCharacterMovement()->BrakingDecelerationFalling = 1500.0f;
 
 	GetCharacterMovement()->bRunPhysicsWithNoController = true;
-
-	PlayerInfo = new Protocol::MoveInfo();
-	DestInfo = new Protocol::MoveInfo();
 }
 
 AS1Player::~AS1Player()
 {
-	delete PlayerInfo;
-	delete DestInfo;
-
-	PlayerInfo = nullptr;
-	DestInfo = nullptr;
 }
 
 void AS1Player::BeginPlay()
 {
 	Super::BeginPlay();
 
-	{
-		FVector Location = GetActorLocation();
-		DestInfo->set_x(Location.X);
-		DestInfo->set_y(Location.Y);
-		DestInfo->set_z(Location.Z);
-		DestInfo->set_yaw(GetControlRotation().Yaw);
+	
+	FVector Location = GetActorLocation();
 
-	}
+	ServerMoveTarget = FVector2D(Location.X, Location.Y);
+
+	if (!IsMyPlayer())
+	{
+		UCharacterMovementComponent* Movement = GetCharacterMovement();
+
+		Movement->StopMovementImmediately();
+		Movement->DisableMovement();
+	}	
 }
 
 void AS1Player::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	{
-		FVector Location = GetActorLocation();
-		PlayerInfo->set_x(Location.X);
-		PlayerInfo->set_y(Location.Y);
-		PlayerInfo->set_z(Location.Z);
-		PlayerInfo->set_yaw(GetControlRotation().Yaw);
-	}
-
-	if (IsMyPlayer() == false)
-	{
-		FVector Location = GetActorLocation();
-		FVector DestLocation = FVector(DestInfo->x(), DestInfo->y(), DestInfo->z());
-
-		const float Distance = FVector::Dist(Location, DestLocation);
-
-		// 오차가 큰 경우 강제 이동
-		if (Distance >= 100.f)
-		{
-			SetActorLocation(DestLocation);
-		}
-
-		const Protocol::MoveState State = PlayerInfo->state();
-		if (State == Protocol::MOVE_STATE_MOVE)
-		{
-			SetActorRotation(FMath::RInterpTo(GetActorRotation(), FRotator(0, DestInfo->yaw(), 0), DeltaSeconds, 15.f));
-			AddMovementInput(GetActorForwardVector());
-		}
-	}
-}
-
-bool AS1Player::IsMyPlayer()
-{
-	return Cast<AS1MyPlayer>(this) != nullptr;
-}
-
-void AS1Player::SetMoveState(Protocol::MoveState State)
-{
-	if (PlayerInfo->state() == State)
+	if (IsMyPlayer())
 		return;
 
-	PlayerInfo->set_state(State);
+	const FVector PreviousLocation = GetActorLocation();
 
-	// TODO
+	const FVector TargetLocation(ServerMoveTarget.X, ServerMoveTarget.Y, PreviousLocation.Z);
+
+	const FVector DesiredLocation = FMath::VInterpConstantTo(PreviousLocation, TargetLocation, DeltaSeconds, 500.f);
+
+	FHitResult Hit;
+
+	SetActorLocation(DesiredLocation, true, &Hit, ETeleportType::None);
+
+	// Sweep 적용 후 실제 이동한 위치
+	const FVector ActualLocation = GetActorLocation();
+
+	UCharacterMovementComponent* Movement = GetCharacterMovement();
+
+	if (DeltaSeconds > UE_SMALL_NUMBER)
+	{
+		Movement->Velocity = (ActualLocation - PreviousLocation) / DeltaSeconds;
+	}
+	else
+	{
+		Movement->Velocity = FVector::ZeroVector;
+	}
+
+	//const float Distance = FVector::Dist(Location, DestLocation);
+
+	//// 오차가 큰 경우 강제 이동
+	//if (Distance >= 100.f)
+	//{
+	//	SetActorLocation(DestLocation);
+	//}
+
+	//const Protocol::MoveState State = PlayerInfo->state();
+	//if (State == Protocol::MOVE_STATE_MOVE)
+	//{
+	//	SetActorRotation(FMath::RInterpTo(GetActorRotation(), FRotator(0, DestInfo->yaw(), 0), DeltaSeconds, 15.f));
+	//	AddMovementInput(GetActorForwardVector());
+	//}
 }
+
+bool AS1Player::IsMyPlayer() const
+{
+	return Cast<AS1MyPlayer>(this) != nullptr;
+}	
 
 void AS1Player::UpdateMatchState(const Protocol::MatchPlayerState& State)
 {
@@ -125,19 +124,34 @@ void AS1Player::UpdateMatchState(const Protocol::MatchPlayerState& State)
 	OnPlayerStateUpdated.Broadcast(PlayerState);
 }
 
-void AS1Player::SetMoveInfo(const Protocol::MoveInfo& Info)
+void AS1Player::TeleportToServerPosition(float X, float Y)
 {
-	PlayerInfo->CopyFrom(Info);
+	FVector Location = GetActorLocation();
 
-	FVector Location(Info.x(), Info.y(), Info.z());
-	SetActorLocation(Location);
+	Location.X = X;
+	Location.Y = Y;
+
+	FHitResult Hit;
+
+	SetActorLocation(Location, true, &Hit, ETeleportType::None);
+
+	const FVector ActualLocation = GetActorLocation();
+
+	ServerMoveTarget = FVector2D(ActualLocation.X, ActualLocation.Y);
 }
 
-void AS1Player::SetDestInfo(const Protocol::MoveInfo& Info)
+void AS1Player::SetServerMoveTarget(float X, float Y)
 {
-	// Dest에 최종 상태 복사
-	DestInfo->CopyFrom(Info);
+	const FVector2D NewTarget(X, Y);
 
-	// 상태 적용
-	SetMoveState(Info.state());
+	const FVector2D MoveDirection = NewTarget - ServerMoveTarget;
+
+	if (!MoveDirection.IsNearlyZero())
+	{
+		const FVector Direction3D(MoveDirection.X, MoveDirection.Y, 0.f);
+
+		SetActorRotation(Direction3D.Rotation());
+	}
+
+	ServerMoveTarget = NewTarget;
 }
