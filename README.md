@@ -11,7 +11,7 @@ Red/Blue 두 팀이 제한 시간 동안 전투해 더 높은 점수를 얻는 �
 ```mermaid
 flowchart LR
     Login[회원가입 / 로그인] --> Lobby[로비 / 방 목록]
-    Lobby --> Room[방 / 팀 / Ready]
+    Lobby --> Room[방 / 팀 / Ready / 채팅]
     Room --> Match[이동 / 조준 / 사격]
     Match --> Result[점수 / 승패]
     Result --> Room
@@ -35,6 +35,7 @@ flowchart LR
 - 회원가입, 로그인, 동일 계정 중복 로그인 오류 표시
 - 로비 방 목록 조회, 방 생성·입장·퇴장
 - Red/Blue 팀 선택, Ready 상태와 호스트 권한 동기화
+- 대기방·매치에서 같은 방 플레이어 간 실시간 채팅
 - 매치 준비, 맵 로딩 완료, 매치 시작·종료 처리
 - 로컬·원격 플레이어 생성, 제거, 리스폰
 - 위치·방향·이동 상태 동기화
@@ -68,6 +69,7 @@ flowchart LR
 | 매치 | `C_START_MATCH`, `C_MATCH_PREPARE`, `C_RETURN_TO_ROOM` | `S_MATCH_PREPARE`, `S_MATCH_START`, `S_MATCH_END` |
 | 이동 | `C_MOVE` | `S_MOVE` |
 | 전투 | `C_FIRE`, `C_HIT` | `S_FIRE`, `S_PLAYER_STATE`, `S_PLAYER_RESPAWN` |
+| 채팅 | `C_CHAT` | `S_CHAT` |
 
 ### 이동 동기화
 
@@ -78,6 +80,17 @@ flowchart LR
 ### 조준과 전투
 
 마우스 화면 좌표를 월드 공간으로 변환하고 지면과의 교점을 구해 발사 방향을 계산합니다. 서버가 검증·브로드캐스트한 `S_FIRE`를 기준으로 모든 클라이언트가 동일한 시작 위치와 방향에 시각용 투사체를 생성합니다. HP, 생존 여부, Kill/Death와 팀 점수는 서버 상태를 기준으로 갱신합니다.
+
+### 방 단위 채팅
+
+`RequestChat`은 입력 앞뒤의 공백을 제거하고 빈 메시지를 거부한 뒤 UTF-8 문자열을 `C_CHAT`으로 전송합니다. 서버가 같은 방 전체에 `S_CHAT(player_id, msg)`를 브로드캐스트하면 클라이언트는 다음 순서로 발신자 닉네임을 찾습니다.
+
+1. 자신의 `LocalObjectId`와 `LocalNickname`
+2. 현재 매치의 Player Actor 목록
+3. 대기방의 `CurrentRoom.Players`
+4. 찾지 못한 경우 `Player_<object_id>` 대체 이름
+
+완성된 `닉네임: 메시지` 문자열은 `OnChatReceived` Blueprint Delegate로 전달되어 대기방이나 매치 UI에서 표시할 수 있습니다.
 
 ### 디렉터리 구조
 
@@ -112,13 +125,18 @@ MMOClient/
 - 문제: 작업 스레드에서 Actor나 Widget을 직접 변경하면 Unreal Game Thread 규칙과 충돌할 수 있습니다.
 - 해결: 작업 스레드는 완성된 패킷을 수신 큐에만 저장하고, Game Thread의 `HandleRecvPackets`가 패킷 처리와 월드·UI 갱신을 수행하도록 분리했습니다.
 
+### 패킷에 닉네임이 없는 채팅 표시
+
+- 문제: `S_CHAT`에는 발신자 Object ID와 메시지만 있어 UI에서 바로 닉네임을 출력할 수 없습니다.
+- 해결: GameInstance가 유지하는 로컬 계정 정보, 매치 Actor, 방 플레이어 목록을 순서대로 조회해 닉네임을 복원하고, 조회 실패 시 Object ID 기반 대체 이름을 사용하도록 했습니다.
+
 ## 실행 방법
 
 1. [서버 저장소](https://github.com/JJW8584/Server_CPP)의 `Server.sln`을 빌드하고 `GameServer`를 먼저 실행합니다.
 2. 원격 서버를 사용한다면 `US1GameInstance`의 `IpAddress`와 `Port`를 수정합니다. 기본값은 `127.0.0.1:7777`입니다.
 3. Unreal Engine 5.8에서 `S1.uproject`를 엽니다.
 4. C++ 모듈을 빌드한 뒤 시작 맵인 `/Game/Maps/LoginMap`을 실행합니다.
-5. 두 개 이상의 서로 다른 계정으로 로그인해 방 생성, 팀 선택, Ready, 매치 시작 순서로 테스트합니다.
+5. 두 개 이상의 서로 다른 계정으로 로그인해 방 생성, 팀 선택, Ready, 채팅, 매치 시작 순서로 테스트합니다. 대기방과 매치 화면에서 발신자 닉네임과 메시지가 동일하게 표시되는지 확인합니다.
 
 ### 조작
 
