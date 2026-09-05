@@ -81,6 +81,7 @@ struct FCurrentRoomState
 	TArray<FRoomPlayerItem> Players;
 };
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLoginFailed, FString, Message);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnRoomListUpdated);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCreateRoomResult, bool, bSuccess);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEnterRoomResult, bool, bSuccess);
@@ -91,6 +92,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnMatchStarted);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnMatchPlayerScoreUpdated, int64, ObjectId, int32, KillCount, int32, DeathCount);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnMatchEnded, ERoomTeam, WinnerTeam, int32, FinalRedScore, int32, FinalBlueScore);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnRegisterResult, bool, bSuccess, FString, Message);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnChatReceived, FString, FormattedMessage);
 
 UCLASS()
 class S1_API US1GameInstance : public UGameInstance
@@ -136,6 +138,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Auth")
 	bool RequestLogin(const FString& LoginId, const FString& Password);
 	void HandleLogin(const Protocol::S_LOGIN& Pkt);
+
+	UPROPERTY(BlueprintAssignable, Category = "Auth")
+	FOnLoginFailed OnLoginFailed;
 
 	uint64 GetLocalAccountId() const
 	{
@@ -213,6 +218,12 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Room")
 	FOnLeaveRoomResult OnLeaveRoomResult;
+
+	UFUNCTION(BlueprintCallable)
+	bool RequestChat(const FString& Message);
+	void HandleChat(Protocol::S_CHAT& Pkt);
+	UPROPERTY(BlueprintAssignable, Category = "Chat")
+	FOnChatReceived OnChatReceived;
 
 	//----------
 	//	인게임

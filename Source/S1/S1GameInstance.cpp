@@ -115,20 +115,31 @@ void US1GameInstance::HandleRegister(const Protocol::S_REGISTER& Pkt)
 bool US1GameInstance::RequestLogin(const FString& LoginId, const FString& Password)
 {
 	if (Socket == nullptr || !GameServerSession.IsValid())
+	{
 		return false;
+	}
 
 	const FString TrimmedLoginId = LoginId.TrimStartAndEnd();
 
 	if (TrimmedLoginId.Len() < 4 || TrimmedLoginId.Len() > 64)
+	{
+		OnLoginFailed.Broadcast(TEXT("아이디는 4자 이상 64자 이하로 입력해주세요."));
 		return false;
+	}
 
 	if (Password.Len() < 8 || Password.Len() > 128)
+	{
+		OnLoginFailed.Broadcast(TEXT("비밀번호는 8자 이상 128자 이하로 입력해주세요."));
 		return false;
+	}
 
 	for (const TCHAR Ch : TrimmedLoginId)
 	{
 		if (!FChar::IsAlnum(Ch))
+		{
+			OnLoginFailed.Broadcast(TEXT("아이디는 영문자와 숫자만 사용할 수 있습니다."));
 			return false;
+		}
 	}
 
 	FTCHARToUTF8 LoginIdUtf8(*TrimmedLoginId);
@@ -161,6 +172,10 @@ void US1GameInstance::HandleLogin(const Protocol::S_LOGIN& Pkt)
 			ErrorMessage = TEXT("아이디 또는 비밀번호가 올바르지 않습니다.");
 			break;
 
+		case Protocol::AUTH_RESULT_DUPLICATE_LOGIN_ID:
+			ErrorMessage = TEXT("이미 접속 중인 계정입니다.");
+			break;
+
 		case Protocol::AUTH_RESULT_SERVER_ERROR:
 			ErrorMessage = TEXT("서버 오류가 발생했습니다.");
 			break;
@@ -168,12 +183,10 @@ void US1GameInstance::HandleLogin(const Protocol::S_LOGIN& Pkt)
 		default:
 			ErrorMessage = TEXT("로그인에 실패했습니다.");
 			break;
+
 		}
 
-		if (GEngine != nullptr)
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, ErrorMessage);
-		}
+		OnLoginFailed.Broadcast(ErrorMessage);
 
 		return;
 	}
@@ -181,6 +194,8 @@ void US1GameInstance::HandleLogin(const Protocol::S_LOGIN& Pkt)
 	// 성공 패킷 유효성 검사
 	if (Pkt.account_id() == 0 || Pkt.object_id() == 0)
 	{
+		OnLoginFailed.Broadcast(TEXT("서버에서 잘못된 로그인 응답을 받았습니다."));
+
 		if (GEngine != nullptr)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("잘못된 로그인 응답입니다."));
@@ -474,6 +489,68 @@ void US1GameInstance::HandleLeaveRoom(Protocol::S_LEAVE_ROOM& Pkt)
 	CurrentRoom = FCurrentRoomState();
 
 	OnLeaveRoomResult.Broadcast(Pkt.success());
+}
+
+bool US1GameInstance::RequestChat(const FString& Message)
+{
+	if (Socket == nullptr || !GameServerSession.IsValid())
+		return false;
+
+	const FString TrimmedMessage = Message.TrimStartAndEnd();
+
+	if (TrimmedMessage.IsEmpty())
+		return false;
+
+	Protocol::C_CHAT Pkt;
+	Pkt.set_msg(TCHAR_TO_UTF8(*TrimmedMessage));
+
+	SEND_PACKET(Pkt);
+	return true;
+}
+
+void US1GameInstance::HandleChat(Protocol::S_CHAT& Pkt)
+{
+	const uint64 SenderId = Pkt.player_id();
+	FString Nickname;
+
+	// 인게임에서 자기 자신
+	if (SenderId == LocalObjectId)
+	{
+		Nickname = LocalNickname;
+	}
+
+	// 인게임의 다른 플레이어
+	if (Nickname.IsEmpty())
+	{
+		if (AS1Player* const* FoundPlayer = Players.Find(SenderId))
+		{
+			if (IsValid(*FoundPlayer))
+			{
+				Nickname = (*FoundPlayer)->GetNickname();
+			}
+		}
+	}
+
+	// Room에 있는 플레이어
+	if (Nickname.IsEmpty())
+	{
+		for (const FRoomPlayerItem& Player : CurrentRoom.Players)
+		{
+			if (static_cast<uint64>(Player.ObjectId) == SenderId)
+			{
+				Nickname = Player.Nickname;
+				break;
+			}
+		}
+	}
+
+	if (Nickname.IsEmpty())
+	{
+		Nickname = FString::Printf(TEXT("Player_%s"), *LexToString(SenderId));
+	}
+
+	const FString Message = UTF8_TO_TCHAR(Pkt.msg().c_str());
+	OnChatReceived.Broadcast(FString::Printf(TEXT("%s: %s"), *Nickname, *Message));
 }
 
 bool US1GameInstance::RequestGameStart()

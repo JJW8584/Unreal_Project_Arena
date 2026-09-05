@@ -278,5 +278,13 @@ bool Handle_S_RETURN_TO_ROOM(PacketSessionRef& session, Protocol::S_RETURN_TO_RO
 
 bool Handle_S_CHAT(PacketSessionRef& session, Protocol::S_CHAT& pkt)
 {
+	if (GWorld == nullptr)
+		return false;
+
+	if (auto* GameInstance = Cast<US1GameInstance>(GWorld->GetGameInstance()))
+	{
+		GameInstance->HandleChat(pkt);
+	}
+
 	return true;
 }
